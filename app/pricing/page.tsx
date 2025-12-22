@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { createCheckoutSession } from '@/app/actions/stripe'
+import { createMembershipCheckoutSession } from '@/app/actions/stripe'
 
 // Note: Price IDs should be set as NEXT_PUBLIC_ env vars or passed from server
 // For now, using placeholders - update these in your .env.local
@@ -15,7 +15,7 @@ export default function PricingPage() {
     const priceType = priceId === MONTHLY_PRICE_ID ? 'monthly' : 'annual'
     setLoading(priceType)
     try {
-      const { url } = await createCheckoutSession(priceId)
+      const { url } = await createMembershipCheckoutSession(priceId)
       if (url) {
         window.location.href = url
       }

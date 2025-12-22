@@ -5,12 +5,11 @@ import { WhyNow } from '@/components/home/WhyNow'
 import { AboutMe } from '@/components/home/AboutMe'
 import { ThisMonth } from '@/components/home/ThisMonth'
 import { Closing } from '@/components/home/Closing'
-import { BackgroundShapes } from '@/components/BackgroundShapes'
+import { GalleryWallShapes } from '@/components/home/GalleryWallShapes'
 
 export default function Home() {
   return (
     <div className="relative min-h-screen">
-      <BackgroundShapes />
       <Hero />
       <WhatIs />
       <HowItWorks />
@@ -21,4 +20,3 @@ export default function Home() {
     </div>
   )
 }
-

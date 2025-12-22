@@ -1,0 +1,4 @@
+# Public assets directory
+# Static files placed here are served at the root URL
+# e.g., public/logo/logo.svg -> accessible at /logo/logo.svg
+

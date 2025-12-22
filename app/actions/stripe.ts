@@ -6,56 +6,88 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { redirect } from 'next/navigation'
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: '2024-06-20',
+  apiVersion: '2023-10-16',
 })
 
-export async function createCheckoutSession(priceId: string) {
+interface CreateCheckoutParams {
+  volumeId: string
+  email: string
+}
+
+export async function createCheckoutSession({ volumeId, email }: CreateCheckoutParams) {
   const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-
-  if (!user) {
-    redirect('/signin')
-  }
-
-  // Get or create customer
   const adminSupabase = createAdminClient()
-  let { data: membership } = await adminSupabase
-    .from('memberships')
-    .select('stripe_customer_id')
-    .eq('user_id', user.id)
+
+  // Get volume details
+  const { data: volume } = await adminSupabase
+    .from('volumes')
+    .select('*')
+    .eq('id', volumeId)
+    .eq('status', 'published')
     .single()
 
-  let customerId = membership?.stripe_customer_id
+  if (!volume) {
+    throw new Error('Volume not found')
+  }
 
-  if (!customerId) {
-    const customer = await stripe.customers.create({
-      email: user.email,
-      metadata: {
-        user_id: user.id,
-      },
-    })
-    customerId = customer.id
+  // Check if already purchased
+  const { data: existingPurchase } = await adminSupabase
+    .from('purchases')
+    .select('id')
+    .eq('volume_id', volumeId)
+    .eq('email', email)
+    .single()
 
-    await adminSupabase.from('memberships').upsert({
-      user_id: user.id,
-      stripe_customer_id: customerId,
-    })
+  if (existingPurchase) {
+    redirect(`/events/${volume.slug}?purchased=true`)
   }
 
   const session = await stripe.checkout.sessions.create({
-    customer: customerId,
-    mode: 'subscription',
     payment_method_types: ['card'],
+    mode: 'payment',
+    line_items: [
+      {
+        price_data: {
+          currency: 'usd',
+          product_data: {
+            name: volume.title,
+            description: volume.one_line_promise,
+          },
+          unit_amount: volume.price_cents,
+        },
+        quantity: 1,
+      },
+    ],
+    customer_email: email,
+    success_url: `${process.env.NEXT_PUBLIC_SITE_URL}/events/${volume.slug}?success=1&session_id={CHECKOUT_SESSION_ID}`,
+    cancel_url: `${process.env.NEXT_PUBLIC_SITE_URL}/events/${volume.slug}`,
+    metadata: {
+      volume_id: volumeId,
+      email,
+    },
+  })
+
+  return { url: session.url }
+}
+
+export async function createMembershipCheckoutSession(priceId: string) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+
+  const session = await stripe.checkout.sessions.create({
+    payment_method_types: ['card'],
+    mode: 'subscription',
     line_items: [
       {
         price: priceId,
         quantity: 1,
       },
     ],
-    success_url: `${process.env.NEXT_PUBLIC_SITE_URL}/account/welcome?session_id={CHECKOUT_SESSION_ID}`,
+    customer_email: user?.email || undefined,
+    success_url: `${process.env.NEXT_PUBLIC_SITE_URL}/account?success=1`,
     cancel_url: `${process.env.NEXT_PUBLIC_SITE_URL}/pricing`,
     metadata: {
-      user_id: user.id,
+      type: 'membership',
     },
   })
 
@@ -67,18 +99,17 @@ export async function createPortalSession() {
   const { data: { user } } = await supabase.auth.getUser()
 
   if (!user) {
-    redirect('/signin')
+    throw new Error('User not authenticated')
   }
 
-  const adminSupabase = createAdminClient()
-  const { data: membership } = await adminSupabase
+  const { data: membership } = await supabase
     .from('memberships')
     .select('stripe_customer_id')
     .eq('user_id', user.id)
     .single()
 
   if (!membership?.stripe_customer_id) {
-    throw new Error('No customer found')
+    throw new Error('No Stripe customer ID found')
   }
 
   const session = await stripe.billingPortal.sessions.create({
@@ -88,4 +119,3 @@ export async function createPortalSession() {
 
   return { url: session.url }
 }
-

@@ -29,22 +29,22 @@ export async function middleware(request: NextRequest) {
     }
   )
 
-  // Refresh session if expired - required for Server Components
   const { data: { user } } = await supabase.auth.getUser()
 
   // Protect admin routes
-  if (request.nextUrl.pathname.startsWith('/admin')) {
+  if (request.nextUrl.pathname.startsWith('/admin') && 
+      !request.nextUrl.pathname.startsWith('/admin/sign-in')) {
     if (!user) {
-      return NextResponse.redirect(new URL('/login', request.url))
+      return NextResponse.redirect(new URL('/admin/sign-in', request.url))
     }
 
     const { data: profile } = await supabase
-      .from('profiles')
+      .from('admin_profiles')
       .select('role')
-      .eq('id', user.id)
+      .eq('user_id', user.id)
       .single()
 
-    if (profile?.role !== 'admin') {
+    if (!profile) {
       return NextResponse.redirect(new URL('/', request.url))
     }
   }
@@ -57,4 +57,3 @@ export const config = {
     '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
   ],
 }
-

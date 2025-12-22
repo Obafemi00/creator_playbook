@@ -1,17 +1,18 @@
 import type { Metadata } from 'next'
 import { Baloo_2, DM_Sans } from 'next/font/google'
 import './globals.css'
-import { Nav } from '@/components/Nav'
-import { Footer } from '@/components/Footer'
+import { Layout } from '@/components/Layout'
 
 const baloo = Baloo_2({
   subsets: ['latin'],
+  weight: ['400', '600', '700'],
   variable: '--font-baloo',
   display: 'swap',
 })
 
 const dmSans = DM_Sans({
   subsets: ['latin'],
+  weight: ['400', '500'],
   variable: '--font-dm-sans',
   display: 'swap',
 })
@@ -29,11 +30,8 @@ export default function RootLayout({
   return (
     <html lang="en" className={`${baloo.variable} ${dmSans.variable}`}>
       <body className="font-sans antialiased bg-offwhite text-charcoal">
-        <Nav />
-        <main>{children}</main>
-        <Footer />
+        <Layout>{children}</Layout>
       </body>
     </html>
   )
 }
-
