@@ -163,7 +163,7 @@ export function VolumeForm({ volume }: VolumeFormProps) {
         </div>
 
         <div>
-          <label className="block text-sm font-medium mb-2 text-charcoal">PDF File</label>
+          <label className="block text-sm font-medium mb-2 text-charcoal">File</label>
           <input
             type="file"
             accept=".pdf"

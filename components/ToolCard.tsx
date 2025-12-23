@@ -28,7 +28,7 @@ export function ToolCard({ tool }: ToolCardProps) {
           {tool.gated_level === 'email' ? 'Email' : 'Member'}
         </span>
         <span className="text-sm text-orange font-semibold group-hover:translate-x-1 transition-transform inline-block">
-          Access toolbox →
+          Access playbook →
         </span>
       </div>
     </Link>

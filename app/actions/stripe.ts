@@ -119,3 +119,84 @@ export async function createPortalSession() {
 
   return { url: session.url }
 }
+
+/**
+ * Creates a Stripe checkout session for Playbook support payments
+ * @param amount - Amount in dollars (1, 2, or 3)
+ * @param email - Optional email for guest support
+ */
+export async function createSupportCheckoutSession(amount: number, email?: string) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+
+  // Validate amount
+  if (![1, 2, 3].includes(amount)) {
+    throw new Error('Invalid support amount. Must be $1, $2, or $3')
+  }
+
+  // Get current month in YYYY-MM format
+  const now = new Date()
+  const month = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`
+
+  // Use user email if available, otherwise use provided email
+  const customerEmail = user?.email || email
+
+  if (!customerEmail) {
+    throw new Error('Email is required for support checkout')
+  }
+
+  // Create pending support record in Supabase before checkout
+  const adminSupabase = createAdminClient()
+  const { data: pendingSupport } = await adminSupabase
+    .from('playbook_supports')
+    .insert({
+      user_id: user?.id || null,
+      amount: amount * 100, // Convert to cents
+      currency: 'usd',
+      status: 'pending',
+      buyer_email: customerEmail,
+      month,
+      product: 'playbook',
+    })
+    .select()
+    .single()
+
+  const session = await stripe.checkout.sessions.create({
+    payment_method_types: ['card'],
+    mode: 'payment',
+    line_items: [
+      {
+        price_data: {
+          currency: 'usd',
+          product_data: {
+            name: 'Support the Team',
+            description: `Monthly Playbook Support - ${month}`,
+          },
+          unit_amount: amount * 100, // Convert to cents
+        },
+        quantity: 1,
+      },
+    ],
+    customer_email: customerEmail,
+    success_url: `${process.env.NEXT_PUBLIC_SITE_URL}/playbook?support_success=1&session_id={CHECKOUT_SESSION_ID}`,
+    cancel_url: `${process.env.NEXT_PUBLIC_SITE_URL}/playbook`,
+    metadata: {
+      support_amount: amount.toString(),
+      product: 'playbook',
+      month,
+      user_id: user?.id || '',
+      buyer_email: customerEmail,
+      support_id: pendingSupport?.id || '',
+    },
+  })
+
+  // Update pending record with session ID
+  if (pendingSupport) {
+    await adminSupabase
+      .from('playbook_supports')
+      .update({ stripe_checkout_session_id: session.id })
+      .eq('id', pendingSupport.id)
+  }
+
+  return { url: session.url }
+}

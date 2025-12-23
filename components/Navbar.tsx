@@ -1,16 +1,29 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { usePathname } from 'next/navigation'
+import { useTheme } from 'next-themes'
 import { motion, AnimatePresence } from 'framer-motion'
 import { NavLink } from './NavLink'
 import { MobileMenu } from './MobileMenu'
+import { ThemeToggle } from './ThemeToggle'
 
 export function Navbar() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+  const [mounted, setMounted] = useState(false)
   const pathname = usePathname()
+  const { resolvedTheme } = useTheme()
+
+  useEffect(() => {
+    setMounted(true)
+  }, [])
+
+  // Determine logo based on theme
+  const logoSrc = mounted && resolvedTheme === 'dark'
+    ? '/logo/Creator_Playbook_Logo_Full_White_NoBG.png'
+    : '/logo/Creator_Playbook_Logo_Full_Colorful_NoBG.png'
 
   return (
     <>
@@ -18,7 +31,7 @@ export function Navbar() {
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.55, ease: [0.4, 0, 0.2, 1] }}
-        className="fixed top-0 left-0 right-0 z-50 bg-offwhite/60 backdrop-blur-sm border-b border-charcoal/5"
+        className="fixed top-0 left-0 right-0 z-50 bg-[var(--bg)]/60 dark:bg-[var(--bg)]/80 backdrop-blur-sm border-b border-[var(--border)]"
       >
         <div className="max-w-[1200px] mx-auto px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
@@ -27,14 +40,18 @@ export function Navbar() {
               href="/" 
               className="flex items-center hover:opacity-80 transition-opacity duration-300"
             >
-              <Image
-                src="/logo/Creator Playbook Logo_Orange_Transparent.png"
-                alt="Creator Playbook"
-                width={2586}
-                height={1008}
-                className="h-8 w-auto"
-                priority
-              />
+              {mounted ? (
+                <Image
+                  src={logoSrc}
+                  alt="Creator Playbook"
+                  width={2586}
+                  height={1008}
+                  className="h-16 w-auto"
+                  priority
+                />
+              ) : (
+                <div className="h-32 w-32 bg-charcoal/10 rounded" />
+              )}
             </Link>
 
             {/* Desktop Navigation */}
@@ -45,32 +62,36 @@ export function Navbar() {
               <NavLink href="/events" pathname={pathname}>
                 Events
               </NavLink>
-              <NavLink href="/toolbox" pathname={pathname}>
-                Toolbox
+              <NavLink href="/playbook" pathname={pathname}>
+                Playbook
               </NavLink>
               <NavLink href="/#about" pathname={pathname}>
                 About
               </NavLink>
+              <ThemeToggle />
             </div>
 
-            {/* Mobile Menu Button */}
-            <button
-              onClick={() => setMobileMenuOpen(true)}
-              className="md:hidden p-2 text-charcoal hover:text-orange transition-colors"
-              aria-label="Open menu"
-            >
-              <svg
-                className="w-6 h-6"
-                fill="none"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth="1.5"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
+            {/* Mobile: Theme Toggle + Menu Button */}
+            <div className="md:hidden flex items-center gap-3">
+              <ThemeToggle />
+              <button
+                onClick={() => setMobileMenuOpen(true)}
+                className="p-2 text-[var(--text)] hover:text-orange transition-colors"
+                aria-label="Open menu"
               >
-                <path d="M4 6h16M4 12h16M4 18h16" />
-              </svg>
-            </button>
+                <svg
+                  className="w-6 h-6"
+                  fill="none"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth="1.5"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path d="M4 6h16M4 12h16M4 18h16" />
+                </svg>
+              </button>
+            </div>
           </div>
         </div>
 

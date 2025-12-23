@@ -42,9 +42,9 @@ export function ToolboxGate() {
   if (unlocked) {
     return (
       <div className="bg-white/40 backdrop-blur-sm rounded-3xl p-10 border border-charcoal/5">
-        <h2 className="font-display text-2xl font-bold mb-6 text-charcoal">Toolbox unlocked</h2>
+        <h2 className="font-display text-2xl font-bold mb-6 text-charcoal">Playbook unlocked</h2>
         <p className="text-charcoal/70 mb-8">
-          Your toolbox is being prepared. Check back soon for tools that help you think clearer and move faster.
+          Your playbook is being prepared. Check back soon for tools that help you think clearer and move faster.
         </p>
         <ul className="space-y-4 text-charcoal/60">
           <li>• Coming soon: Simple templates and frameworks</li>
@@ -57,7 +57,7 @@ export function ToolboxGate() {
 
   return (
     <div className="bg-white/40 backdrop-blur-sm rounded-3xl p-10 border border-charcoal/5 max-w-md mx-auto">
-      <h2 className="font-display text-2xl font-bold mb-4 text-charcoal">Access the toolbox</h2>
+      <h2 className="font-display text-2xl font-bold mb-4 text-charcoal">Access the playbook</h2>
       <p className="text-charcoal/70 mb-8 leading-relaxed">
         Enter your email to unlock this toolkit.
       </p>

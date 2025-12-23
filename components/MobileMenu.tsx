@@ -1,8 +1,10 @@
 'use client'
 
+import { useEffect, useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import Link from 'next/link'
 import Image from 'next/image'
+import { useTheme } from 'next-themes'
 
 interface MobileMenuProps {
   isOpen: boolean
@@ -11,6 +13,16 @@ interface MobileMenuProps {
 }
 
 export function MobileMenu({ isOpen, onClose, pathname }: MobileMenuProps) {
+  const [mounted, setMounted] = useState(false)
+  const { resolvedTheme } = useTheme()
+
+  useEffect(() => {
+    setMounted(true)
+  }, [])
+
+  const logoSrc = mounted && resolvedTheme === 'dark'
+    ? '/logo/Creator_Playbook_Logo_Full_White_NoBG.png'
+    : '/logo/Creator_Playbook_Logo_Full_Colorful_NoBG.png'
   return (
     <AnimatePresence>
       {isOpen && (
@@ -21,7 +33,7 @@ export function MobileMenu({ isOpen, onClose, pathname }: MobileMenuProps) {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.2 }}
-            className="fixed inset-0 bg-charcoal/10 backdrop-blur-sm z-50 md:hidden"
+            className="fixed inset-0 bg-charcoal/10 dark:bg-black/20 backdrop-blur-sm z-50 md:hidden"
             onClick={onClose}
           />
 
@@ -31,7 +43,7 @@ export function MobileMenu({ isOpen, onClose, pathname }: MobileMenuProps) {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -10 }}
             transition={{ duration: 0.3, ease: [0.4, 0, 0.2, 1] }}
-            className="fixed inset-x-0 top-0 bg-offwhite border-b border-charcoal/5 z-50 md:hidden"
+            className="fixed inset-x-0 top-0 bg-[var(--bg)] border-b border-[var(--border)] z-50 md:hidden"
           >
             <div className="max-w-[1200px] mx-auto px-6 py-6">
               {/* Close button */}
@@ -41,17 +53,21 @@ export function MobileMenu({ isOpen, onClose, pathname }: MobileMenuProps) {
                   className="flex items-center"
                   onClick={onClose}
                 >
-                  <Image
-                    src="/logo/Creator Playbook Logo_Orange_Transparent.png"
-                    alt="Creator Playbook"
-                    width={2586}
-                    height={1008}
-                    className="h-8 w-auto"
-                  />
+                  {mounted ? (
+                    <Image
+                      src={logoSrc}
+                      alt="Creator Playbook"
+                      width={2586}
+                      height={1008}
+                      className="h-32 w-auto"
+                    />
+                  ) : (
+                    <div className="h-32 w-32 bg-charcoal/10 rounded" />
+                  )}
                 </Link>
                 <button
                   onClick={onClose}
-                  className="p-2 text-charcoal hover:text-orange transition-colors"
+                  className="p-2 text-[var(--text)] hover:text-orange transition-colors"
                   aria-label="Close menu"
                 >
                   <svg
@@ -74,8 +90,8 @@ export function MobileMenu({ isOpen, onClose, pathname }: MobileMenuProps) {
                   href="/"
                   onClick={onClose}
                   className={`text-base font-medium ${
-                    pathname === '/' ? 'text-orange' : 'text-charcoal/70'
-                  } hover:text-charcoal transition-colors`}
+                    pathname === '/' ? 'text-orange' : 'text-[var(--text)]/70'
+                  } hover:text-[var(--text)] transition-colors`}
                 >
                   Home
                 </Link>
@@ -83,24 +99,24 @@ export function MobileMenu({ isOpen, onClose, pathname }: MobileMenuProps) {
                   href="/events"
                   onClick={onClose}
                   className={`text-base font-medium ${
-                    pathname === '/events' ? 'text-orange' : 'text-charcoal/70'
-                  } hover:text-charcoal transition-colors`}
+                    pathname === '/events' ? 'text-orange' : 'text-[var(--text)]/70'
+                  } hover:text-[var(--text)] transition-colors`}
                 >
                   Events
                 </Link>
                 <Link
-                  href="/toolbox"
+                  href="/playbook"
                   onClick={onClose}
                   className={`text-base font-medium ${
-                    pathname === '/toolbox' ? 'text-orange' : 'text-charcoal/70'
-                  } hover:text-charcoal transition-colors`}
+                    pathname === '/playbook' ? 'text-orange' : 'text-[var(--text)]/70'
+                  } hover:text-[var(--text)] transition-colors`}
                 >
-                  Toolbox
+                  Playbook
                 </Link>
                 <Link
                   href="/#about"
                   onClick={onClose}
-                  className="text-base font-medium text-charcoal/70 hover:text-charcoal transition-colors"
+                  className="text-base font-medium text-[var(--text)]/70 hover:text-[var(--text)] transition-colors"
                 >
                   About
                 </Link>

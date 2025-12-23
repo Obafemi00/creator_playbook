@@ -50,7 +50,7 @@ export function UnlockForm({ volume }: UnlockFormProps) {
             {volume.title}
           </h1>
           <p className="text-lg text-charcoal/70 leading-relaxed">
-            This month includes a short event + a simple PDF.
+            This month includes a short event + a simple document.
           </p>
         </div>
 

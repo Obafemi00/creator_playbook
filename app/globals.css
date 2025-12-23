@@ -2,12 +2,74 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Theme Variables - Light Mode (Default) */
 :root {
-  --orange: #FF7A1A;
-  --offwhite: #FFF6EE;
-  --teal: #5FB3B3;
-  --lavender: #C6B7E2;
-  --charcoal: #2B2B2B;
+  /* Brand Colors */
+  --brand-orange: #FF7A1A;
+  --brand-teal: #5FB3B3;
+  --brand-lavender: #C6B7E2;
+  
+  /* Light Mode Colors */
+  --bg: #FFF6EE;
+  --text: #2B2B2B;
+  --muted: #6B6B6B;
+  --card: #FFFFFF;
+  --border: rgba(43, 43, 43, 0.08);
+  --shadow: rgba(43, 43, 43, 0.05);
+  
+  /* How it works section - Light Mode (use defaults) */
+  --how-card-bg: rgba(255, 255, 255, 0.6);
+  --how-card-border: rgba(43, 43, 43, 0.05);
+  --how-card-shadow: rgba(43, 43, 43, 0.05);
+  --how-heading: var(--text);
+  --how-body: rgba(43, 43, 43, 0.65);
+  --how-badge-bg: transparent;
+  --how-badge-border: transparent;
+  --how-line: rgba(43, 43, 43, 0.2);
+  --how-line-muted: rgba(43, 43, 43, 0.15);
+  --how-node: rgba(43, 43, 43, 0.25);
+  
+  /* Legacy support (keep for existing code) */
+  --orange: var(--brand-orange);
+  --offwhite: var(--bg);
+  --teal: var(--brand-teal);
+  --lavender: var(--brand-lavender);
+  --charcoal: var(--text);
+}
+
+/* Theme Variables - Dark Mode */
+.dark {
+  /* Brand Colors (same) */
+  --brand-orange: #FF7A1A;
+  --brand-teal: #5FB3B3;
+  --brand-lavender: #C6B7E2;
+  
+  /* Dark Mode Colors */
+  --bg: #0f0f12;
+  --text: #f2f2f2;
+  --muted: #a0a0a0;
+  --card: #17171c;
+  --border: rgba(255, 255, 255, 0.1);
+  --shadow: rgba(0, 0, 0, 0.3);
+  
+  /* How it works section - Dark Mode Specific */
+  --how-card-bg: #1a1a20;
+  --how-card-border: rgba(255, 255, 255, 0.12);
+  --how-card-shadow: rgba(0, 0, 0, 0.4);
+  --how-heading: rgba(255, 255, 255, 0.92);
+  --how-body: rgba(255, 255, 255, 0.78);
+  --how-badge-bg: rgba(255, 255, 255, 0.06);
+  --how-badge-border: rgba(255, 255, 255, 0.08);
+  --how-line: rgba(255, 122, 26, 0.4);
+  --how-line-muted: rgba(255, 122, 26, 0.25);
+  --how-node: rgba(255, 122, 26, 0.7);
+  
+  /* Legacy support */
+  --orange: var(--brand-orange);
+  --offwhite: var(--bg);
+  --teal: var(--brand-teal);
+  --lavender: var(--brand-lavender);
+  --charcoal: var(--text);
 }
 
 * {
@@ -24,11 +86,12 @@ body {
 }
 
 body {
-  background: var(--offwhite);
-  color: var(--charcoal);
+  background: var(--bg);
+  color: var(--text);
   font-family: var(--font-dm-sans);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  transition: background-color 0.3s ease, color 0.3s ease;
 }
 
 @layer utilities {

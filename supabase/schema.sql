@@ -50,6 +50,23 @@ CREATE TABLE IF NOT EXISTS toolbox_signups (
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
+-- Playbook supports table (for monthly support payments)
+CREATE TABLE IF NOT EXISTS playbook_supports (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  user_id UUID REFERENCES auth.users(id) ON DELETE SET NULL,
+  amount INTEGER NOT NULL, -- Amount in cents (100 = $1.00)
+  currency TEXT NOT NULL DEFAULT 'usd',
+  status TEXT NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'completed', 'failed')),
+  stripe_checkout_session_id TEXT UNIQUE,
+  stripe_payment_intent_id TEXT UNIQUE,
+  buyer_email TEXT, -- Email of the buyer (from Stripe session)
+  month TEXT, -- Format: YYYY-MM
+  product TEXT NOT NULL DEFAULT 'playbook',
+  metadata JSONB, -- Additional metadata
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
 -- Indexes
 CREATE INDEX IF NOT EXISTS idx_volumes_status ON volumes(status);
 CREATE INDEX IF NOT EXISTS idx_volumes_slug ON volumes(slug);
@@ -57,6 +74,10 @@ CREATE INDEX IF NOT EXISTS idx_volumes_event_date ON volumes(event_date);
 CREATE INDEX IF NOT EXISTS idx_purchases_volume_id ON purchases(volume_id);
 CREATE INDEX IF NOT EXISTS idx_purchases_email ON purchases(email);
 CREATE INDEX IF NOT EXISTS idx_purchases_stripe_session_id ON purchases(stripe_session_id);
+CREATE INDEX IF NOT EXISTS idx_playbook_supports_user_id ON playbook_supports(user_id);
+CREATE INDEX IF NOT EXISTS idx_playbook_supports_stripe_checkout_session_id ON playbook_supports(stripe_checkout_session_id);
+CREATE INDEX IF NOT EXISTS idx_playbook_supports_buyer_email ON playbook_supports(buyer_email);
+CREATE INDEX IF NOT EXISTS idx_playbook_supports_status ON playbook_supports(status);
 
 -- RLS Policies
 
@@ -155,6 +176,23 @@ CREATE POLICY "Users can insert own profile" ON profiles
 CREATE POLICY "Anyone can insert toolbox signups" ON toolbox_signups
   FOR INSERT WITH CHECK (true);
 
+-- Playbook supports policies
+CREATE POLICY "Users can read own supports" ON playbook_supports
+  FOR SELECT USING (
+    user_id = auth.uid() OR user_id IS NULL
+  );
+
+CREATE POLICY "Anyone can insert playbook supports" ON playbook_supports
+  FOR INSERT WITH CHECK (true);
+
+CREATE POLICY "Admins can read all playbook supports" ON playbook_supports
+  FOR SELECT USING (
+    EXISTS (
+      SELECT 1 FROM admin_profiles
+      WHERE admin_profiles.user_id = auth.uid()
+    )
+  );
+
 -- Functions
 CREATE OR REPLACE FUNCTION update_updated_at_column()
 RETURNS TRIGGER AS $$
@@ -172,4 +210,7 @@ CREATE TRIGGER update_admin_profiles_updated_at BEFORE UPDATE ON admin_profiles
   FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
 CREATE TRIGGER update_profiles_updated_at BEFORE UPDATE ON profiles
+  FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+CREATE TRIGGER update_playbook_supports_updated_at BEFORE UPDATE ON playbook_supports
   FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();

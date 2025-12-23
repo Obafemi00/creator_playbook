@@ -28,7 +28,7 @@ export default async function AdminToolboxPage() {
   return (
     <div className="pt-32 pb-20 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
       <div className="flex items-center justify-between mb-12">
-        <h1 className="font-display text-4xl md:text-5xl font-bold">Toolbox</h1>
+        <h1 className="font-display text-4xl md:text-5xl font-bold">Playbook</h1>
         <Link
           href="/admin/toolbox/new"
           className="px-8 py-4 bg-orange text-offwhite rounded-full font-semibold hover:bg-orange/90 transition-colors"

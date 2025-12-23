@@ -133,11 +133,11 @@ export function VolumeCard({ volume }: VolumeCardProps) {
             <>
               {hasPurchased ? (
                 <Button onClick={handleDownload} variant="primary">
-                  Download PDF
+                  Download
                 </Button>
               ) : (
                 <Button href={`/events/${volume.slug}/unlock`} variant="primary">
-                  Unlock PDF (${(volume.price_cents / 100).toFixed(2)})
+                  Unlock (${(volume.price_cents / 100).toFixed(2)})
                 </Button>
               )}
             </>

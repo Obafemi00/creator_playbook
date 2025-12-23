@@ -28,7 +28,7 @@ export default function PricingPage() {
 
   const features = [
     'Access to all monthly events',
-    'Full toolbox access',
+    'Full playbook access',
     'One clear action per event',
     'Simple strategies, no fluff',
   ]

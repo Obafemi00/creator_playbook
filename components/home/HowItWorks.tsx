@@ -6,7 +6,7 @@ import { FadeIn } from '@/components/motion'
 
 const steps = [
   {
-    title: 'Watch',
+    title: 'Join',
     description: 'A short monthly event exploring one idea that matters to creators right now.',
     iconBg: 'bg-teal/20',
     iconColor: '#5FB3B3',
@@ -26,28 +26,71 @@ const steps = [
 ]
 
 // Clean, modern icons - consistent style
-const WatchIcon = () => (
+const JoinIcon = () => (
   <svg width="40" height="40" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
     <circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="1.5" fill="none" />
     <path
-      d="M12 8v4l3 2"
+      d="M10 8l6 4-6 4V8z"
       stroke="currentColor"
       strokeWidth="1.5"
       strokeLinecap="round"
       strokeLinejoin="round"
+      fill="currentColor"
     />
   </svg>
 )
 
 const ThinkIcon = () => (
   <svg width="40" height="40" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <circle cx="12" cy="9" r="3" stroke="currentColor" strokeWidth="1.5" fill="none" />
+    {/* Brain - left hemisphere with curves */}
     <path
-      d="M7 16c0-2 2-3 5-3s5 1 5 3"
+      d="M9 4.5c-2 0-3.5 1.5-3.5 3.5v2c0 2 1.5 3.5 3.5 3.5"
       stroke="currentColor"
       strokeWidth="1.5"
       strokeLinecap="round"
       strokeLinejoin="round"
+    />
+    <path
+      d="M9.5 13.5c0 1.5 1 2.5 2.5 2.5"
+      stroke="currentColor"
+      strokeWidth="1.5"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+    {/* Brain - right hemisphere with curves */}
+    <path
+      d="M15 4.5c2 0 3.5 1.5 3.5 3.5v2c0 2-1.5 3.5-3.5 3.5"
+      stroke="currentColor"
+      strokeWidth="1.5"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+    <path
+      d="M14.5 13.5c0 1.5-1 2.5-2.5 2.5"
+      stroke="currentColor"
+      strokeWidth="1.5"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+    {/* Brain folds - characteristic curves */}
+    <path
+      d="M10 7.5c0 .5.5 1 1 1s1-.5 1-1"
+      stroke="currentColor"
+      strokeWidth="1.5"
+      strokeLinecap="round"
+    />
+    <path
+      d="M9 10c0 .5.5 1 1 1h4c.5 0 1-.5 1-1"
+      stroke="currentColor"
+      strokeWidth="1.5"
+      strokeLinecap="round"
+    />
+    {/* Brain stem/base */}
+    <path
+      d="M11.5 16v2.5"
+      stroke="currentColor"
+      strokeWidth="1.5"
+      strokeLinecap="round"
     />
   </svg>
 )
@@ -64,7 +107,7 @@ const ActIcon = () => (
   </svg>
 )
 
-const iconComponents = [WatchIcon, ThinkIcon, ActIcon]
+const iconComponents = [JoinIcon, ThinkIcon, ActIcon]
 
 export function HowItWorks() {
   const sectionRef = useRef<HTMLElement>(null)
@@ -83,7 +126,7 @@ export function HowItWorks() {
       <div className="max-w-6xl mx-auto">
         {/* Section Header */}
         <FadeIn duration={0.6} delay={0.1}>
-          <h2 className="font-display text-3xl md:text-4xl font-semibold text-charcoal text-center mb-12 md:mb-16">
+          <h2 className="font-display text-3xl md:text-4xl font-semibold text-[var(--how-heading)] text-center mb-12 md:mb-16">
             How it works
           </h2>
         </FadeIn>
@@ -91,18 +134,58 @@ export function HowItWorks() {
         {/* Cards Container */}
         <div className="relative">
           {/* Connecting Line - Runs through cards at vertical center */}
-          <div className="absolute top-1/2 left-0 right-0 h-[1.5px] hidden md:block pointer-events-none -translate-y-1/2">
+          <div className="absolute top-1/2 left-0 right-0 h-[2px] hidden md:block pointer-events-none -translate-y-1/2">
             <svg className="w-full h-full" viewBox="0 0 1000 2" fill="none" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none">
+              {/* Base line (muted) */}
+              <line
+                x1="0"
+                y1="1"
+                x2="1000"
+                y2="1"
+                stroke="var(--how-line-muted)"
+                strokeWidth="2"
+              />
+              {/* Animated progress line (full orange in dark mode) */}
               <motion.line
                 x1="0"
                 y1="1"
                 x2="1000"
                 y2="1"
-                stroke="#2B2B2B"
-                strokeWidth="1.5"
-                strokeOpacity="0.2"
+                stroke="var(--how-line)"
+                strokeWidth="2"
                 strokeDasharray="1000"
                 strokeDashoffset={useTransform(lineProgress, (val) => 1000 - val * 1000)}
+                style={{
+                  filter: 'drop-shadow(0 0 2px var(--how-line))',
+                }}
+              />
+              {/* Nodes at card positions */}
+              <motion.circle
+                cx="166.67"
+                cy="1"
+                r="4"
+                fill="var(--how-node)"
+                style={{
+                  opacity: useTransform(lineProgress, [0.15, 0.3], [0, 1], { clamp: true }),
+                }}
+              />
+              <motion.circle
+                cx="500"
+                cy="1"
+                r="4"
+                fill="var(--how-node)"
+                style={{
+                  opacity: useTransform(lineProgress, [0.45, 0.6], [0, 1], { clamp: true }),
+                }}
+              />
+              <motion.circle
+                cx="833.33"
+                cy="1"
+                r="4"
+                fill="var(--how-node)"
+                style={{
+                  opacity: useTransform(lineProgress, [0.75, 0.9], [0, 1], { clamp: true }),
+                }}
               />
             </svg>
           </div>
@@ -113,21 +196,53 @@ export function HowItWorks() {
               const IconComponent = iconComponents[index]
               return (
                 <FadeIn key={step.title} duration={0.6} delay={0.15 + index * 0.1}>
-                  <div className="relative bg-white/60 backdrop-blur-sm rounded-3xl p-8 md:p-10 flex flex-col items-center text-center h-full">
-                    {/* Icon Container */}
-                    <div className={`${step.iconBg} rounded-2xl w-24 h-24 md:w-28 md:h-28 flex items-center justify-center mb-6 relative z-10`}>
-                      <div style={{ color: step.iconColor }} className="opacity-90">
-                        <IconComponent />
+                  <div 
+                    className="relative rounded-3xl p-8 md:p-10 flex flex-col items-center text-center h-full backdrop-blur-sm border shadow-lg transition-all duration-300"
+                    style={{
+                      backgroundColor: 'var(--how-card-bg)',
+                      borderColor: 'var(--how-card-border)',
+                      boxShadow: '0 4px 12px var(--how-card-shadow)',
+                    }}
+                  >
+                    {/* Radial highlight at top (dark mode only) */}
+                    <div 
+                      className="absolute top-0 left-1/2 -translate-x-1/2 w-3/4 h-1/3 rounded-full opacity-30 dark:block hidden pointer-events-none"
+                      style={{
+                        background: 'radial-gradient(ellipse at center, rgba(255, 255, 255, 0.08) 0%, transparent 70%)',
+                      }}
+                    />
+
+                    {/* Icon Container with Badge (dark mode) */}
+                    <div className="relative z-10 mb-6 w-24 h-24 md:w-28 md:h-28">
+                      {/* Badge background (dark mode only) */}
+                      <div 
+                        className="absolute inset-0 rounded-2xl border dark:block hidden"
+                        style={{
+                          backgroundColor: 'var(--how-badge-bg)',
+                          borderColor: 'var(--how-badge-border)',
+                        }}
+                      />
+                      {/* Icon container */}
+                      <div className={`${step.iconBg} rounded-2xl w-full h-full flex items-center justify-center relative`}>
+                        <div style={{ color: step.iconColor }} className="opacity-90 dark:opacity-100">
+                          <IconComponent />
+                        </div>
                       </div>
                     </div>
 
                     {/* Title */}
-                    <h3 className="font-display text-2xl md:text-3xl font-bold text-charcoal mb-4 leading-tight">
+                    <h3 
+                      className="font-display text-2xl md:text-3xl font-bold mb-4 leading-tight"
+                      style={{ color: 'var(--how-heading)' }}
+                    >
                       {step.title}
                     </h3>
 
                     {/* Description */}
-                    <p className="text-base md:text-lg text-charcoal/65 leading-relaxed font-sans">
+                    <p 
+                      className="text-base md:text-lg leading-relaxed font-sans"
+                      style={{ color: 'var(--how-body)' }}
+                    >
                       {step.description}
                     </p>
                   </div>

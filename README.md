@@ -2,7 +2,7 @@
 
 Not a course. Not a hustle. This is a journey.
 
-A calm, artsy platform for monthly creator events with $1 PDF unlocks.
+A calm, artsy platform for monthly creator events with $1 document unlocks.
 
 ## Stack
 
@@ -39,7 +39,7 @@ STRIPE_WEBHOOK_SECRET=whsec_...
 
 1. Create a new Supabase project
 2. Run `supabase/schema.sql` in the Supabase SQL editor
-3. Create storage bucket: `creator-playbook-pdfs` (private)
+3. Create storage bucket: `creator-playbook-pdfs` (private) for document storage
 4. Set bucket policies:
    - Public: no read access
    - Authenticated: read/write via service role only
@@ -75,12 +75,12 @@ Visit [http://localhost:3000](http://localhost:3000)
 - Events page listing all published volumes
 - Toolbox page (email-gated)
 - About page
-- $1 PDF unlock flow via Stripe Checkout
+- $1 document unlock flow via Stripe Checkout
 
 ### Admin
 - Dashboard with stats
 - Volume management (CRUD)
-- PDF upload to Supabase Storage
+- Document upload to Supabase Storage
 - Admin management (OWNER only)
 - Protected routes with role-based access
 
@@ -90,7 +90,7 @@ Visit [http://localhost:3000](http://localhost:3000)
 /app
   /admin              # Admin pages
   /events             # Public events pages
-  /toolbox            # Toolbox page
+  /playbook           # Playbook page
   /api                # API routes (webhooks, signups)
   /actions            # Server actions (Stripe)
 /components
