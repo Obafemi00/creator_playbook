@@ -90,11 +90,28 @@ export function EventRegistrationForm() {
         }),
       })
 
-      const data = await response.json()
+      let data: any
+      try {
+        data = await response.json()
+      } catch (jsonError) {
+        // If response is not JSON, show generic error
+        console.error('[Registration] Failed to parse response as JSON:', jsonError)
+        throw new Error('Server returned an invalid response. Please try again.')
+      }
 
       // Check if response indicates failure
       if (!response.ok || data.ok === false) {
-        // Use server-provided error message, fallback to generic
+        // Log details to console for debugging
+        if (data.detail || data.details) {
+          console.error('[Registration] Server error details:', {
+            error: data.error,
+            detail: data.detail,
+            details: data.details,
+            requestId: data.requestId
+          })
+        }
+        
+        // Use server-provided error message
         const errorMessage = data.error || 'Registration failed. Please try again.'
         throw new Error(errorMessage)
       }
@@ -114,7 +131,7 @@ export function EventRegistrationForm() {
         throw new Error(data.error || 'Registration failed. Please try again.')
       }
     } catch (error) {
-      console.error('Registration error:', error)
+      console.error('[Registration] Error:', error)
       setSubmitError(error instanceof Error ? error.message : 'Something went wrong. Please try again.')
     } finally {
       setIsSubmitting(false)

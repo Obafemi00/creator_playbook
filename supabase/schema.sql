@@ -82,6 +82,17 @@ CREATE TABLE IF NOT EXISTS playbook_purchases (
   last_downloaded_at TIMESTAMPTZ
 );
 
+-- Event registrations table
+CREATE TABLE IF NOT EXISTS event_registrations (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  first_name TEXT NOT NULL,
+  last_name TEXT NOT NULL,
+  country TEXT NOT NULL,
+  email TEXT NOT NULL,
+  event_slug TEXT NOT NULL DEFAULT 'current',
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
 -- Indexes
 CREATE INDEX IF NOT EXISTS idx_volumes_status ON volumes(status);
 CREATE INDEX IF NOT EXISTS idx_volumes_slug ON volumes(slug);
@@ -96,6 +107,8 @@ CREATE INDEX IF NOT EXISTS idx_playbook_supports_status ON playbook_supports(sta
 CREATE INDEX IF NOT EXISTS idx_playbook_purchases_email_month ON playbook_purchases(email, playbook_month);
 CREATE INDEX IF NOT EXISTS idx_playbook_purchases_stripe_session_id ON playbook_purchases(stripe_session_id);
 CREATE INDEX IF NOT EXISTS idx_playbook_purchases_status ON playbook_purchases(status);
+CREATE INDEX IF NOT EXISTS idx_event_registrations_event_slug ON event_registrations(event_slug);
+CREATE INDEX IF NOT EXISTS idx_event_registrations_created_at ON event_registrations(created_at DESC);
 
 -- RLS Policies
 
@@ -107,6 +120,7 @@ ALTER TABLE profiles ENABLE ROW LEVEL SECURITY;
 ALTER TABLE toolbox_signups ENABLE ROW LEVEL SECURITY;
 ALTER TABLE playbook_supports ENABLE ROW LEVEL SECURITY;
 ALTER TABLE playbook_purchases ENABLE ROW LEVEL SECURITY;
+ALTER TABLE event_registrations ENABLE ROW LEVEL SECURITY;
 
 -- Volumes policies
 CREATE POLICY "Public can read published volumes" ON volumes
@@ -217,6 +231,14 @@ CREATE POLICY "Admins can read all playbook supports" ON playbook_supports
 -- RLS is enabled but no public policies - all access via service role
 CREATE POLICY "No public access to playbook purchases" ON playbook_purchases
   FOR ALL USING (false);
+
+-- Event registrations policies
+-- Allow public INSERT (form submissions), disallow public SELECT
+CREATE POLICY "Public can insert event registrations" ON event_registrations
+  FOR INSERT WITH CHECK (true);
+
+CREATE POLICY "No public SELECT on event_registrations" ON event_registrations
+  FOR SELECT USING (false);
 
 -- Functions
 CREATE OR REPLACE FUNCTION update_updated_at_column()
