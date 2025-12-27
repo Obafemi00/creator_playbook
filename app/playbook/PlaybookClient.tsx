@@ -77,8 +77,8 @@ export default function PlaybookClient() {
   }
 
   return (
-    <div className="relative min-h-screen overflow-hidden bg-[#0B0C10] dark:bg-gradient-to-br dark:from-[#0B0C10] dark:to-[#11131A]">
-      {/* Subtle background accents - premium dark theme */}
+    <div className="relative min-h-screen overflow-hidden bg-[var(--bg)]">
+      {/* Subtle background accents - premium theme */}
       {!prefersReducedMotion && (
         <>
           {/* Grain texture overlay */}
@@ -140,10 +140,10 @@ export default function PlaybookClient() {
             }}
             className="text-center mb-20 md:mb-28"
           >
-            <h1 className="font-display text-5xl md:text-6xl lg:text-7xl font-bold mb-8 md:mb-10 text-charcoal dark:text-[#F5F7FF] leading-tight tracking-tight">
+            <h1 className="font-display text-5xl md:text-6xl lg:text-7xl font-bold mb-8 md:mb-10 text-[var(--text)] leading-tight tracking-tight">
               Creator Playbook
             </h1>
-            <p className="text-lg md:text-xl lg:text-2xl text-charcoal/70 dark:text-[#B7BCCB] leading-relaxed max-w-2xl mx-auto">
+            <p className="text-lg md:text-xl lg:text-2xl text-[var(--muted)] leading-relaxed max-w-2xl mx-auto">
               Simple tools designed to help creators think clearer and move faster. Zero fluff. One job per tool.
             </p>
           </motion.div>
@@ -163,8 +163,8 @@ export default function PlaybookClient() {
             } : {}}
             className="relative group mb-16 md:mb-20"
           >
-            {/* Card background - premium dark featured style */}
-            <div className="relative bg-white/70 dark:bg-[#12141B] backdrop-blur-sm rounded-3xl md:rounded-[2rem] p-10 md:p-12 lg:p-16 border border-charcoal/5 dark:border-[#232635] shadow-lg dark:shadow-[0_8px_32px_rgba(0,0,0,0.4)] hover:shadow-xl dark:hover:shadow-[0_12px_40px_rgba(0,0,0,0.5)] dark:hover:border-[#2A2F3D] transition-all duration-300">
+            {/* Card background - premium featured style */}
+            <div className="relative bg-white dark:bg-[var(--card)] rounded-3xl md:rounded-[2rem] p-10 md:p-12 lg:p-16 border border-[var(--border)] shadow-lg hover:shadow-xl hover:border-[var(--brand-orange)]/20 transition-all duration-300">
               {/* Subtle decorative elements */}
               <div className="absolute top-6 right-6 w-24 h-24 opacity-[0.04] dark:opacity-[0.08] pointer-events-none">
                 <svg viewBox="0 0 100 100" className="w-full h-full">
@@ -181,7 +181,7 @@ export default function PlaybookClient() {
 
               {/* Icon - light bulb in corner with hover effect */}
               <motion.div 
-                className="absolute top-8 right-8 md:top-10 md:right-10 text-charcoal/20 dark:text-[#7E8599] group-hover:text-[#FF7A1A] transition-colors duration-300"
+                className="absolute top-8 right-8 md:top-10 md:right-10 text-[var(--muted)]/40 dark:text-[var(--muted)]/60 group-hover:text-[var(--brand-orange)] transition-colors duration-300"
                 whileHover={!prefersReducedMotion ? { rotate: 4 } : {}}
               >
                 <svg className="w-10 h-10 md:w-12 md:h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -191,10 +191,10 @@ export default function PlaybookClient() {
 
               {/* Content */}
               <div className="relative z-10 max-w-2xl">
-                <h2 className="font-display text-3xl md:text-4xl lg:text-5xl font-bold mb-4 md:mb-6 text-charcoal dark:text-[#F5F7FF] leading-tight tracking-tight">
+                <h2 className="font-display text-3xl md:text-4xl lg:text-5xl font-bold mb-4 md:mb-6 text-[var(--text)] leading-tight tracking-tight">
                   100 Prompts for Creators
                 </h2>
-                <p className="text-lg md:text-xl text-charcoal/60 dark:text-[#B7BCCB] mb-10 md:mb-12 leading-relaxed">
+                <p className="text-lg md:text-xl text-[var(--muted)] mb-10 md:mb-12 leading-relaxed">
                   Thought-provoking questions to clarify your creative direction and unlock new ideas.
                 </p>
 
@@ -212,11 +212,11 @@ export default function PlaybookClient() {
                     className={`
                       px-8 md:px-10 py-4 md:py-5 rounded-xl font-semibold text-base md:text-lg
                       transition-all duration-200
-                      focus:outline-none focus:ring-2 focus:ring-[#FF7A1A]/50 focus:ring-offset-2 dark:focus:ring-offset-[#0B0C10]
+                      focus:outline-none focus:ring-2 focus:ring-[var(--brand-orange)]/50 focus:ring-offset-2 focus:ring-offset-[var(--bg)]
                       ${
                         isUnlocked
-                          ? 'bg-[#FF7A1A] text-[#0B0C10] hover:bg-[#FF7A1A]/90 cursor-pointer shadow-lg shadow-[#FF7A1A]/30'
-                          : 'bg-[#1A1C24] dark:bg-[#1A1C24] text-[#7E8599] dark:text-[#7E8599] cursor-not-allowed border border-[#232635]'
+                          ? 'bg-[var(--brand-orange)] text-[var(--bg)] hover:bg-[var(--brand-orange)]/90 cursor-pointer shadow-lg shadow-[var(--brand-orange)]/30'
+                          : 'bg-[var(--card)] text-[var(--muted)] cursor-not-allowed border border-[var(--border)]'
                       }
                     `}
                   >
@@ -229,7 +229,7 @@ export default function PlaybookClient() {
                       initial={{ opacity: 0, scale: 0.8, x: -10 }}
                       animate={{ opacity: 1, scale: 1, x: 0 }}
                       transition={{ duration: 0.4, ease: 'easeOut' }}
-                      className="flex items-center gap-2 text-sm text-[#B7BCCB]"
+                      className="flex items-center gap-2 text-sm text-[var(--muted)]"
                     >
                       <svg className="w-4 h-4 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
@@ -254,10 +254,10 @@ export default function PlaybookClient() {
               }}
               className="max-w-md mx-auto text-center"
             >
-              <p className="text-charcoal/60 dark:text-[#B7BCCB] mb-3 text-base md:text-lg leading-relaxed">
+              <p className="text-[var(--muted)] mb-3 text-base md:text-lg leading-relaxed">
                 Enter your email to unlock this toolkit.
               </p>
-              <p className="text-charcoal/50 dark:text-[#7E8599] mb-8 text-sm md:text-base">
+              <p className="text-[var(--muted)]/70 mb-8 text-sm md:text-base">
                 No spam. Just the journey.
               </p>
 
@@ -274,16 +274,15 @@ export default function PlaybookClient() {
                     disabled={isSubmitting}
                     className={`
                       w-full px-6 py-4 md:py-5 rounded-xl
-                      border bg-[#0F1117] dark:bg-[#0F1117]
-                      text-[#F5F7FF] dark:text-[#F5F7FF]
-                      placeholder:text-[#7E8599] dark:placeholder:text-[#7E8599]
-                      focus:outline-none focus:ring-2 focus:ring-[#FF7A1A]/50 focus:border-[#FF7A1A]/50
+                      border bg-[var(--card)] text-[var(--text)]
+                      placeholder:text-[var(--muted)]/60
+                      focus:outline-none focus:ring-2 focus:ring-[var(--brand-orange)]/50 focus:border-[var(--brand-orange)]/50
                       transition-all duration-200
                       disabled:opacity-50 disabled:cursor-not-allowed
                       ${
                         submitError
-                          ? 'border-red-500/50 dark:border-red-500/50'
-                          : 'border-[#2A2F3D] dark:border-[#2A2F3D]'
+                          ? 'border-red-500/50'
+                          : 'border-[var(--border)]'
                       }
                     `}
                     autoFocus
@@ -323,11 +322,11 @@ export default function PlaybookClient() {
                   className={`
                     w-full px-8 py-4 md:py-5 rounded-xl font-semibold text-base md:text-lg
                     transition-all duration-200
-                    focus:outline-none focus:ring-2 focus:ring-[#FF7A1A]/50 focus:ring-offset-2 dark:focus:ring-offset-[#0B0C10]
+                    focus:outline-none focus:ring-2 focus:ring-[var(--brand-orange)]/50 focus:ring-offset-2 focus:ring-offset-[var(--bg)]
                     ${
                       isSubmitting || !email
-                        ? 'bg-[#1A1C24] dark:bg-[#1A1C24] text-[#7E8599] dark:text-[#7E8599] cursor-not-allowed border border-[#232635]'
-                        : 'bg-[#FF7A1A] text-[#0B0C10] hover:bg-[#FF7A1A]/90 cursor-pointer shadow-lg shadow-[#FF7A1A]/30'
+                        ? 'bg-[var(--card)] text-[var(--muted)] cursor-not-allowed border border-[var(--border)]'
+                        : 'bg-[var(--brand-orange)] text-[var(--bg)] hover:bg-[var(--brand-orange)]/90 cursor-pointer shadow-lg shadow-[var(--brand-orange)]/30'
                     }
                   `}
                 >

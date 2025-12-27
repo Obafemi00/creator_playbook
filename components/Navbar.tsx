@@ -42,11 +42,11 @@ export function Navbar() {
                   alt="Creator Playbook"
                   width={2586}
                   height={1008}
-                  className="h-16 w-auto"
+                  className="h-12 md:h-14 w-auto"
                   priority
                 />
               ) : (
-                <div className="h-32 w-32 bg-charcoal/10 rounded" />
+                <div className="h-12 md:h-14 w-24 bg-charcoal/10 rounded" />
               )}
             </Link>
 
@@ -72,7 +72,7 @@ export function Navbar() {
               <ThemeToggle />
               <button
                 onClick={() => setMobileMenuOpen(true)}
-                className="p-2 text-[var(--text)] hover:text-orange transition-colors"
+                className="p-2 text-[var(--text)] hover:text-[var(--brand-orange)] transition-colors"
                 aria-label="Open menu"
               >
                 <svg
