@@ -81,7 +81,10 @@ export function EventRegistrationForm() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          ...formData,
+          firstName: formData.firstName,
+          lastName: formData.lastName,
+          country: formData.country,
+          email: formData.email,
           eventSlug: 'current',
           honeypot, // Honeypot field
         }),
@@ -89,8 +92,16 @@ export function EventRegistrationForm() {
 
       const data = await response.json()
 
-      if (!response.ok) {
-        throw new Error(data.error || 'Registration failed')
+      // Check if response indicates failure
+      if (!response.ok || data.ok === false) {
+        // Use server-provided error message, fallback to generic
+        const errorMessage = data.error || 'Registration failed. Please try again.'
+        throw new Error(errorMessage)
+      }
+
+      // Ensure we got a success response
+      if (!data.ok && data.ok !== undefined) {
+        throw new Error(data.error || 'Registration failed. Please try again.')
       }
 
       // Success
