@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { FadeIn } from '@/components/motion'
 import { VolumeCard } from '@/components/VolumeCard'
+import { EventRegistrationForm } from '@/components/events/EventRegistrationForm'
 
 export default async function EventsPage() {
   const supabase = await createClient()
@@ -16,10 +17,10 @@ export default async function EventsPage() {
         <div className="max-w-4xl mx-auto">
           <FadeIn>
             <div className="mb-16">
-              <h1 className="font-display text-4xl md:text-5xl lg:text-6xl font-bold mb-6 text-charcoal">
+              <h1 className="font-display text-4xl md:text-5xl lg:text-6xl font-bold mb-6 text-charcoal dark:text-[#F5F7FF]">
                 Creator Playbook Events
               </h1>
-            <p className="text-xl text-charcoal/70 leading-relaxed max-w-2xl">
+            <p className="text-xl text-charcoal/70 dark:text-[#B7BCCB] leading-relaxed max-w-2xl">
               Each event captures a moment in the journey. Start anywhere.
             </p>
           </div>
@@ -31,8 +32,11 @@ export default async function EventsPage() {
               ))}
             </div>
           ) : (
-            <p className="text-center text-charcoal/50 py-20">No events yet. Check back soon.</p>
+            <p className="text-center text-charcoal/50 dark:text-[#7E8599] py-20">No events yet. Check back soon.</p>
           )}
+
+          {/* Event Registration Form */}
+          <EventRegistrationForm />
         </FadeIn>
         </div>
       </section>
