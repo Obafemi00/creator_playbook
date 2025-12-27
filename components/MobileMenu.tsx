@@ -4,7 +4,6 @@ import { useEffect, useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import Link from 'next/link'
 import Image from 'next/image'
-import { useTheme } from 'next-themes'
 
 interface MobileMenuProps {
   isOpen: boolean
@@ -14,15 +13,13 @@ interface MobileMenuProps {
 
 export function MobileMenu({ isOpen, onClose, pathname }: MobileMenuProps) {
   const [mounted, setMounted] = useState(false)
-  const { resolvedTheme } = useTheme()
 
   useEffect(() => {
     setMounted(true)
   }, [])
 
-  const logoSrc = mounted && resolvedTheme === 'dark'
-    ? '/logo/Creator_Playbook_Logo_Full_White_NoBG.png'
-    : '/logo/Creator_Playbook_Logo_Full_Colorful_NoBG.png'
+  // Use colorful logo for both light and dark modes
+  const logoSrc = '/logo/Creator_Playbook_Logo_Full_Colorful_NoBG.png'
   return (
     <AnimatePresence>
       {isOpen && (

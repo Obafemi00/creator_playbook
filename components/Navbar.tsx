@@ -4,7 +4,6 @@ import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { usePathname } from 'next/navigation'
-import { useTheme } from 'next-themes'
 import { motion, AnimatePresence } from 'framer-motion'
 import { NavLink } from './NavLink'
 import { MobileMenu } from './MobileMenu'
@@ -14,16 +13,13 @@ export function Navbar() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [mounted, setMounted] = useState(false)
   const pathname = usePathname()
-  const { resolvedTheme } = useTheme()
 
   useEffect(() => {
     setMounted(true)
   }, [])
 
-  // Determine logo based on theme
-  const logoSrc = mounted && resolvedTheme === 'dark'
-    ? '/logo/Creator_Playbook_Logo_Full_White_NoBG.png'
-    : '/logo/Creator_Playbook_Logo_Full_Colorful_NoBG.png'
+  // Use colorful logo for both light and dark modes
+  const logoSrc = '/logo/Creator_Playbook_Logo_Full_Colorful_NoBG.png'
 
   return (
     <>
