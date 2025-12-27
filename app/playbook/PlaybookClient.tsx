@@ -1,11 +1,18 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { motion, useReducedMotion } from 'framer-motion'
+import { motion, useReducedMotion, AnimatePresence } from 'framer-motion'
 import { createSupportCheckoutSession } from '@/app/actions/stripe'
 import { SupportSelector } from '@/components/SupportSelector'
 import { useSearchParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
+
+interface PurchaseStatus {
+  paid: boolean
+  status: string | null
+  email: string | null
+  session_id?: string | null
+}
 
 export default function PlaybookClient() {
   const [selectedAmount, setSelectedAmount] = useState<number | null>(null)
@@ -13,9 +20,15 @@ export default function PlaybookClient() {
   const [email, setEmail] = useState('')
   const [showEmailInput, setShowEmailInput] = useState(false)
   const [userEmail, setUserEmail] = useState<string | null>(null)
+  const [purchaseStatus, setPurchaseStatus] = useState<PurchaseStatus>({ paid: false, status: null, email: null, session_id: null })
+  const [verifyingPayment, setVerifyingPayment] = useState(false)
+  const [isUnlocked, setIsUnlocked] = useState(false)
+  const [unlockAnimation, setUnlockAnimation] = useState(false)
   const prefersReducedMotion = useReducedMotion()
   const searchParams = useSearchParams()
   const supportSuccess = searchParams?.get('support_success')
+  const sessionId = searchParams?.get('session_id')
+  const canceled = searchParams?.get('canceled')
 
   // Check if user is logged in
   useEffect(() => {
@@ -29,13 +42,111 @@ export default function PlaybookClient() {
     checkUser()
   }, [])
 
-  // Check if user just completed support
+  // Check purchase status on mount and when session_id changes
   useEffect(() => {
-    if (supportSuccess === '1') {
-      // Show success state (could add a toast or success message)
-      console.log('Support payment successful!')
+    if (sessionId) {
+      checkPurchaseStatus(sessionId, null)
+    } else if (userEmail) {
+      // Check by email for returning users
+      checkPurchaseStatus(null, userEmail)
     }
-  }, [supportSuccess])
+  }, [sessionId, userEmail])
+
+  // Poll for payment verification if success=1 but not yet verified
+  useEffect(() => {
+    if (supportSuccess === '1' && sessionId && !purchaseStatus.paid && !verifyingPayment) {
+      setVerifyingPayment(true)
+      pollPurchaseStatus(sessionId)
+    }
+  }, [supportSuccess, sessionId, purchaseStatus.paid, verifyingPayment])
+
+  // Show canceled message
+  useEffect(() => {
+    if (canceled === '1') {
+      // Could show a toast here
+      console.log('Payment canceled')
+    }
+  }, [canceled])
+
+  // Trigger unlock animation when purchase status changes to paid
+  useEffect(() => {
+    if (purchaseStatus.paid && !isUnlocked) {
+      setIsUnlocked(true)
+      if (!prefersReducedMotion) {
+        setUnlockAnimation(true)
+        setTimeout(() => setUnlockAnimation(false), 1000)
+      }
+    }
+  }, [purchaseStatus.paid, isUnlocked, prefersReducedMotion])
+
+  const checkPurchaseStatus = async (sessionIdParam: string | null, emailParam: string | null) => {
+    try {
+      const queryParam = sessionIdParam 
+        ? `session_id=${sessionIdParam}` 
+        : emailParam 
+        ? `email=${encodeURIComponent(emailParam)}` 
+        : null
+
+      if (!queryParam) return
+
+      const response = await fetch(`/api/purchases/status?${queryParam}`)
+      const data = await response.json()
+      setPurchaseStatus(data)
+      
+      // Update sessionId if we got it from email lookup
+      if (data.session_id && !sessionIdParam) {
+        // Store in URL for download endpoint
+        const url = new URL(window.location.href)
+        url.searchParams.set('session_id', data.session_id)
+        window.history.replaceState({}, '', url.toString())
+      }
+    } catch (error) {
+      console.error('Error checking purchase status:', error)
+    }
+  }
+
+  const pollPurchaseStatus = async (sessionIdParam: string) => {
+    const maxAttempts = 15 // 15 seconds max
+    let attempts = 0
+    const baseDelay = 1000 // Start with 1 second
+
+    const poll = async (): Promise<void> => {
+      if (attempts >= maxAttempts) {
+        setVerifyingPayment(false)
+        return
+      }
+
+      attempts++
+      
+      try {
+        const response = await fetch(`/api/purchases/status?session_id=${sessionIdParam}`)
+        const data = await response.json()
+        
+        setPurchaseStatus(data)
+
+        // If paid, stop polling
+        if (data.paid) {
+          setVerifyingPayment(false)
+          return
+        }
+
+        // If still not paid, continue polling with exponential backoff
+        const delay = Math.min(baseDelay * Math.pow(1.5, attempts - 1), 3000) // Cap at 3 seconds
+        setTimeout(() => poll(), delay)
+      } catch (error) {
+        console.error('Error polling purchase status:', error)
+        // Continue polling on error (might be temporary)
+        if (attempts < maxAttempts) {
+          const delay = Math.min(baseDelay * Math.pow(1.5, attempts - 1), 3000)
+          setTimeout(() => poll(), delay)
+        } else {
+          setVerifyingPayment(false)
+        }
+      }
+    }
+
+    poll()
+  }
 
   const handleSupport = async () => {
     if (!selectedAmount) return
@@ -70,6 +181,17 @@ export default function PlaybookClient() {
       alert(error instanceof Error ? error.message : 'Failed to create checkout session. Please try again.')
       setLoading(false)
     }
+  }
+
+  const handleDownload = () => {
+    if (!purchaseStatus.paid) return
+    
+    // Use session_id from status response or URL
+    const downloadSessionId = purchaseStatus.session_id || sessionId
+    if (!downloadSessionId) return
+    
+    // Open secure download endpoint
+    window.open(`/api/playbook/download?session_id=${downloadSessionId}`, '_blank')
   }
 
   return (
@@ -249,22 +371,113 @@ export default function PlaybookClient() {
             }}
             className="text-center"
           >
-            <div className="bg-white/40 dark:bg-[var(--card)]/50 backdrop-blur-sm rounded-2xl p-8 md:p-10 border border-charcoal/10 dark:border-[var(--border)] max-w-2xl mx-auto">
+            <div className="bg-white/40 dark:bg-[var(--card)]/50 backdrop-blur-sm rounded-2xl p-8 md:p-10 border border-charcoal/10 dark:border-[var(--border)] max-w-2xl mx-auto relative overflow-hidden">
+              {/* Unlock glow effect */}
+              <AnimatePresence>
+                {unlockAnimation && !prefersReducedMotion && (
+                  <motion.div
+                    initial={{ opacity: 0, scale: 0.8 }}
+                    animate={{ opacity: [0, 0.3, 0], scale: [0.8, 1.2, 1] }}
+                    exit={{ opacity: 0 }}
+                    transition={{ duration: 0.8, ease: 'easeOut' }}
+                    className="absolute inset-0 bg-orange/20 rounded-2xl pointer-events-none"
+                  />
+                )}
+              </AnimatePresence>
+
               <h2 className="font-display text-2xl md:text-3xl font-bold mb-4 text-charcoal dark:text-[var(--text)]">
                 Download the Playbook
               </h2>
               <p className="text-charcoal/70 dark:text-[var(--text)]/70 mb-6 leading-relaxed">
                 Get the current month's Playbook. Supporting the team helps us continue creating these resources.
               </p>
-              <motion.a
-                href="/docs/Creator%20Playbook%20Website.pdf"
-                download="Creator Playbook Website.pdf"
-                whileHover={!prefersReducedMotion ? { y: -2, scale: 1.02 } : {}}
-                whileTap={{ scale: 0.98 }}
-                className="inline-block px-8 py-4 bg-orange text-offwhite rounded-full font-medium hover:bg-orange/90 transition-all duration-300 hover:shadow-lg"
+
+              {/* Verifying payment state */}
+              {verifyingPayment && (
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  className="mb-4"
+                >
+                  <p className="text-sm text-charcoal/60 dark:text-[var(--text)]/60 flex items-center justify-center gap-2">
+                    <motion.span
+                      animate={{ rotate: 360 }}
+                      transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
+                      className="inline-block w-4 h-4 border-2 border-orange border-t-transparent rounded-full"
+                    />
+                    Verifying payment...
+                  </p>
+                </motion.div>
+              )}
+
+              {/* Download button */}
+              <motion.button
+                onClick={handleDownload}
+                disabled={!isUnlocked || verifyingPayment}
+                initial={false}
+                animate={
+                  unlockAnimation && !prefersReducedMotion
+                    ? {
+                        scale: [1, 1.05, 1],
+                        rotate: [0, -2, 2, -2, 0],
+                      }
+                    : {}
+                }
+                transition={{ duration: 0.5, ease: 'easeOut' }}
+                whileHover={!prefersReducedMotion && isUnlocked ? { y: -2, scale: 1.02 } : {}}
+                whileTap={isUnlocked ? { scale: 0.98 } : {}}
+                className={`
+                  inline-flex items-center gap-2 px-8 py-4 rounded-full font-medium text-lg
+                  transition-all duration-300
+                  ${
+                    isUnlocked && !verifyingPayment
+                      ? 'bg-orange text-offwhite hover:bg-orange/90 cursor-pointer shadow-lg shadow-orange/20'
+                      : 'bg-charcoal/20 dark:bg-[var(--card)]/30 text-charcoal/40 dark:text-[var(--text)]/40 cursor-not-allowed'
+                  }
+                `}
               >
-                Download
-              </motion.a>
+                {isUnlocked ? (
+                  <>
+                    <svg
+                      className="w-5 h-5"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
+                      />
+                    </svg>
+                    Download
+                  </>
+                ) : (
+                  <>
+                    <svg
+                      className="w-5 h-5"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
+                      />
+                    </svg>
+                    Unlocks after Support
+                  </>
+                )}
+              </motion.button>
+
+              {!isUnlocked && !verifyingPayment && (
+                <p className="text-xs text-charcoal/50 dark:text-[var(--text)]/50 mt-3">
+                  Support the team to unlock the download
+                </p>
+              )}
             </div>
           </motion.div>
         </div>

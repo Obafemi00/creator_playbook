@@ -1,21 +1,26 @@
 import type { Metadata } from 'next'
-import { Baloo_2, DM_Sans } from 'next/font/google'
+import localFont from 'next/font/local'
 import './globals.css'
 import { Layout } from '@/components/Layout'
 import { Providers } from './providers'
 
-const baloo = Baloo_2({
-  subsets: ['latin'],
-  weight: ['400', '600', '700'],
-  variable: '--font-baloo',
-  display: 'swap',
-})
-
-const dmSans = DM_Sans({
-  subsets: ['latin'],
-  weight: ['400', '500'],
+const dmSans = localFont({
   variable: '--font-dm-sans',
   display: 'swap',
+  src: [
+    { path: '../public/fonts/DMSans-Regular.woff2', weight: '400', style: 'normal' },
+    { path: '../public/fonts/DMSans-Medium.woff2', weight: '500', style: 'normal' },
+  ],
+})
+
+const baloo2 = localFont({
+  variable: '--font-baloo2',
+  display: 'swap',
+  src: [
+    { path: '../public/fonts/Baloo2-Regular.woff2', weight: '400', style: 'normal' },
+    { path: '../public/fonts/Baloo2-SemiBold.woff2', weight: '600', style: 'normal' },
+    { path: '../public/fonts/Baloo2-Bold.woff2', weight: '700', style: 'normal' },
+  ],
 })
 
 export const metadata: Metadata = {
@@ -32,7 +37,7 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="en" className={`${baloo.variable} ${dmSans.variable}`} suppressHydrationWarning>
+    <html lang="en" className={`${baloo2.variable} ${dmSans.variable}`} suppressHydrationWarning>
       <body className="font-sans antialiased bg-[var(--bg)] text-[var(--text)]">
         <Providers>
           <Layout>{children}</Layout>

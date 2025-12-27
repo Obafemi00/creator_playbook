@@ -23,7 +23,7 @@ const config: Config = {
         border: 'var(--border)',
       },
       fontFamily: {
-        display: ['var(--font-baloo)', 'sans-serif'],
+        display: ['var(--font-baloo2)', 'sans-serif'],
         sans: ['var(--font-dm-sans)', 'sans-serif'],
       },
     },

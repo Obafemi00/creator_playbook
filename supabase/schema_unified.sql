@@ -1,7 +1,7 @@
 -- Enable UUID extension
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
--- Volumes table
+-- Volumes table (monthly playbook)
 CREATE TABLE IF NOT EXISTS volumes (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   title TEXT NOT NULL,
@@ -17,14 +17,34 @@ CREATE TABLE IF NOT EXISTS volumes (
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
--- Purchases table
+-- Unified purchases table (replaces: purchases, playbook_purchases, playbook_supports)
 CREATE TABLE IF NOT EXISTS purchases (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  volume_id UUID NOT NULL REFERENCES volumes(id) ON DELETE CASCADE,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  
+  -- Payment identification (required)
+  stripe_session_id TEXT UNIQUE NOT NULL,
+  stripe_payment_intent_id TEXT UNIQUE,
+  
+  -- Purchase type and linkage
+  volume_id UUID REFERENCES volumes(id) ON DELETE SET NULL, -- NULL for support payments, set for volume purchases
+  user_id UUID REFERENCES auth.users(id) ON DELETE SET NULL, -- NULL for guest purchases
+  
+  -- Buyer information
   email TEXT NOT NULL,
-  stripe_session_id TEXT UNIQUE,
-  paid BOOLEAN NOT NULL DEFAULT true,
-  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+  
+  -- Payment details
+  amount INTEGER NOT NULL, -- Amount in cents
+  currency TEXT NOT NULL DEFAULT 'usd',
+  status TEXT NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'paid', 'failed', 'refunded')),
+  
+  -- Download tracking (for playbook/volume downloads)
+  download_count INTEGER NOT NULL DEFAULT 0,
+  last_downloaded_at TIMESTAMPTZ,
+  
+  -- Additional metadata (store month, product type, etc.)
+  metadata JSONB
 );
 
 -- Admin profiles table
@@ -50,52 +70,20 @@ CREATE TABLE IF NOT EXISTS toolbox_signups (
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
--- Playbook supports table (for monthly support payments)
-CREATE TABLE IF NOT EXISTS playbook_supports (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  user_id UUID REFERENCES auth.users(id) ON DELETE SET NULL,
-  amount INTEGER NOT NULL, -- Amount in cents (100 = $1.00)
-  currency TEXT NOT NULL DEFAULT 'usd',
-  status TEXT NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'completed', 'failed')),
-  stripe_checkout_session_id TEXT UNIQUE,
-  stripe_payment_intent_id TEXT UNIQUE,
-  buyer_email TEXT, -- Email of the buyer (from Stripe session)
-  month TEXT, -- Format: YYYY-MM
-  product TEXT NOT NULL DEFAULT 'playbook',
-  metadata JSONB, -- Additional metadata
-  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
-);
-
--- Playbook purchases table (for paid downloads)
-CREATE TABLE IF NOT EXISTS playbook_purchases (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-  email TEXT NOT NULL,
-  stripe_session_id TEXT UNIQUE NOT NULL,
-  stripe_payment_intent_id TEXT UNIQUE,
-  amount INTEGER NOT NULL, -- Amount in cents (100, 200, or 300)
-  currency TEXT NOT NULL DEFAULT 'usd',
-  playbook_month TEXT NOT NULL, -- Format: YYYY-MM (e.g. "2025-01")
-  status TEXT NOT NULL DEFAULT 'paid' CHECK (status IN ('paid', 'pending', 'failed')),
-  download_count INTEGER NOT NULL DEFAULT 0,
-  last_downloaded_at TIMESTAMPTZ
-);
-
 -- Indexes
 CREATE INDEX IF NOT EXISTS idx_volumes_status ON volumes(status);
 CREATE INDEX IF NOT EXISTS idx_volumes_slug ON volumes(slug);
 CREATE INDEX IF NOT EXISTS idx_volumes_event_date ON volumes(event_date);
-CREATE INDEX IF NOT EXISTS idx_purchases_volume_id ON purchases(volume_id);
-CREATE INDEX IF NOT EXISTS idx_purchases_email ON purchases(email);
+
+-- Purchases indexes
 CREATE INDEX IF NOT EXISTS idx_purchases_stripe_session_id ON purchases(stripe_session_id);
-CREATE INDEX IF NOT EXISTS idx_playbook_supports_user_id ON playbook_supports(user_id);
-CREATE INDEX IF NOT EXISTS idx_playbook_supports_stripe_checkout_session_id ON playbook_supports(stripe_checkout_session_id);
-CREATE INDEX IF NOT EXISTS idx_playbook_supports_buyer_email ON playbook_supports(buyer_email);
-CREATE INDEX IF NOT EXISTS idx_playbook_supports_status ON playbook_supports(status);
-CREATE INDEX IF NOT EXISTS idx_playbook_purchases_email_month ON playbook_purchases(email, playbook_month);
-CREATE INDEX IF NOT EXISTS idx_playbook_purchases_stripe_session_id ON playbook_purchases(stripe_session_id);
-CREATE INDEX IF NOT EXISTS idx_playbook_purchases_status ON playbook_purchases(status);
+CREATE INDEX IF NOT EXISTS idx_purchases_stripe_payment_intent_id ON purchases(stripe_payment_intent_id);
+CREATE INDEX IF NOT EXISTS idx_purchases_volume_id ON purchases(volume_id);
+CREATE INDEX IF NOT EXISTS idx_purchases_user_id ON purchases(user_id);
+CREATE INDEX IF NOT EXISTS idx_purchases_email ON purchases(email);
+CREATE INDEX IF NOT EXISTS idx_purchases_status ON purchases(status);
+CREATE INDEX IF NOT EXISTS idx_purchases_email_volume ON purchases(email, volume_id) WHERE volume_id IS NOT NULL;
+CREATE INDEX IF NOT EXISTS idx_purchases_created_at ON purchases(created_at);
 
 -- RLS Policies
 
@@ -105,8 +93,6 @@ ALTER TABLE purchases ENABLE ROW LEVEL SECURITY;
 ALTER TABLE admin_profiles ENABLE ROW LEVEL SECURITY;
 ALTER TABLE profiles ENABLE ROW LEVEL SECURITY;
 ALTER TABLE toolbox_signups ENABLE ROW LEVEL SECURITY;
-ALTER TABLE playbook_supports ENABLE ROW LEVEL SECURITY;
-ALTER TABLE playbook_purchases ENABLE ROW LEVEL SECURITY;
 
 -- Volumes policies
 CREATE POLICY "Public can read published volumes" ON volumes
@@ -144,19 +130,10 @@ CREATE POLICY "Only admins can delete volumes" ON volumes
     )
   );
 
--- Purchases policies (server-side checks recommended)
-CREATE POLICY "Users can read own purchases" ON purchases
-  FOR SELECT USING (
-    email = (SELECT email FROM profiles WHERE id = auth.uid() LIMIT 1)
-  );
-
-CREATE POLICY "Admins can read all purchases" ON purchases
-  FOR SELECT USING (
-    EXISTS (
-      SELECT 1 FROM admin_profiles
-      WHERE admin_profiles.user_id = auth.uid()
-    )
-  );
+-- Purchases policies (server-side only, no public access)
+-- All access via service role - no client direct access
+CREATE POLICY "No public access to purchases" ON purchases
+  FOR ALL USING (false);
 
 -- Admin profiles policies
 CREATE POLICY "Admins can read admin profiles" ON admin_profiles
@@ -196,28 +173,6 @@ CREATE POLICY "Users can insert own profile" ON profiles
 CREATE POLICY "Anyone can insert toolbox signups" ON toolbox_signups
   FOR INSERT WITH CHECK (true);
 
--- Playbook supports policies
-CREATE POLICY "Users can read own supports" ON playbook_supports
-  FOR SELECT USING (
-    user_id = auth.uid() OR user_id IS NULL
-  );
-
-CREATE POLICY "Anyone can insert playbook supports" ON playbook_supports
-  FOR INSERT WITH CHECK (true);
-
-CREATE POLICY "Admins can read all playbook supports" ON playbook_supports
-  FOR SELECT USING (
-    EXISTS (
-      SELECT 1 FROM admin_profiles
-      WHERE admin_profiles.user_id = auth.uid()
-    )
-  );
-
--- Playbook purchases policies (server-side only, no public access)
--- RLS is enabled but no public policies - all access via service role
-CREATE POLICY "No public access to playbook purchases" ON playbook_purchases
-  FOR ALL USING (false);
-
 -- Functions
 CREATE OR REPLACE FUNCTION update_updated_at_column()
 RETURNS TRIGGER AS $$
@@ -237,5 +192,5 @@ CREATE TRIGGER update_admin_profiles_updated_at BEFORE UPDATE ON admin_profiles
 CREATE TRIGGER update_profiles_updated_at BEFORE UPDATE ON profiles
   FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
-CREATE TRIGGER update_playbook_supports_updated_at BEFORE UPDATE ON playbook_supports
+CREATE TRIGGER update_purchases_updated_at BEFORE UPDATE ON purchases
   FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();

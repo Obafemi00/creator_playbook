@@ -6,13 +6,15 @@ A calm, artsy platform for monthly creator events with $1 document unlocks.
 
 ## Stack
 
-- Next.js 14 (App Router) + React 18
+- Next.js 14.2.35 (App Router) + React 18
 - TypeScript
 - TailwindCSS
 - Framer Motion
 - Supabase (Auth + Storage + Database)
 - Stripe (Payments)
 - Zod + react-hook-form
+
+**Note:** This project is pinned to Next.js 14.2.35. The `eslint-config-next` package must match the Next.js version (14.2.35) and requires ESLint 8.x. Next.js 16+ requires ESLint 9.x, which is incompatible with this setup.
 
 ## Setup
 

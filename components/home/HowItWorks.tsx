@@ -42,55 +42,45 @@ const JoinIcon = () => (
 
 const ThinkIcon = () => (
   <svg width="40" height="40" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-    {/* Brain - left hemisphere with curves */}
+    {/* Light bulb - main bulb shape */}
     <path
-      d="M9 4.5c-2 0-3.5 1.5-3.5 3.5v2c0 2 1.5 3.5 3.5 3.5"
+      d="M12 3C9.5 3 7.5 5 7.5 7.5c0 1.5.5 2.5 1.5 3.5"
       stroke="currentColor"
       strokeWidth="1.5"
       strokeLinecap="round"
       strokeLinejoin="round"
     />
     <path
-      d="M9.5 13.5c0 1.5 1 2.5 2.5 2.5"
+      d="M12 3c2.5 0 4.5 2 4.5 4.5 0 1.5-.5 2.5-1.5 3.5"
       stroke="currentColor"
       strokeWidth="1.5"
       strokeLinecap="round"
       strokeLinejoin="round"
     />
-    {/* Brain - right hemisphere with curves */}
+    {/* Bulb body - rounded bottom */}
     <path
-      d="M15 4.5c2 0 3.5 1.5 3.5 3.5v2c0 2-1.5 3.5-3.5 3.5"
+      d="M9 11c0 2 1.5 3.5 3 3.5s3-1.5 3-3.5"
       stroke="currentColor"
       strokeWidth="1.5"
       strokeLinecap="round"
       strokeLinejoin="round"
     />
+    {/* Bulb base/connector */}
     <path
-      d="M14.5 13.5c0 1.5-1 2.5-2.5 2.5"
+      d="M10.5 14.5h3M11 16.5h2"
       stroke="currentColor"
       strokeWidth="1.5"
       strokeLinecap="round"
       strokeLinejoin="round"
     />
-    {/* Brain folds - characteristic curves */}
+    {/* Light rays - subtle indication of brightness */}
     <path
-      d="M10 7.5c0 .5.5 1 1 1s1-.5 1-1"
+      d="M6 8l-1.5-1.5M18 8l1.5-1.5M6 12l-1.5 1.5M18 12l1.5 1.5"
       stroke="currentColor"
       strokeWidth="1.5"
       strokeLinecap="round"
-    />
-    <path
-      d="M9 10c0 .5.5 1 1 1h4c.5 0 1-.5 1-1"
-      stroke="currentColor"
-      strokeWidth="1.5"
-      strokeLinecap="round"
-    />
-    {/* Brain stem/base */}
-    <path
-      d="M11.5 16v2.5"
-      stroke="currentColor"
-      strokeWidth="1.5"
-      strokeLinecap="round"
+      strokeLinejoin="round"
+      opacity="0.6"
     />
   </svg>
 )

@@ -36,6 +36,61 @@ export async function POST(req: NextRequest) {
       })
     }
 
+    // Handle playbook purchases (for downloads)
+    // This includes both direct purchases and support payments (which also unlock downloads)
+    if (session.payment_status === 'paid') {
+      const isPlaybookPurchase = session.metadata?.type === 'playbook_purchase'
+      const isSupportPayment = session.metadata?.product === 'playbook' && session.metadata?.support_amount
+
+      if (isPlaybookPurchase || isSupportPayment) {
+        try {
+          const buyerEmail = 
+            session.customer_details?.email ||
+            session.customer_email ||
+            session.metadata?.email ||
+            session.metadata?.buyer_email ||
+            null
+
+          // Get current month if not in metadata
+          const now = new Date()
+          const playbookMonth = session.metadata?.playbook_month || 
+            session.metadata?.month ||
+            `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`
+
+          if (buyerEmail) {
+            // Idempotent upsert: if stripe_session_id exists, skip (webhook may fire multiple times)
+            const { data: existing } = await supabase
+              .from('playbook_purchases')
+              .select('id')
+              .eq('stripe_session_id', session.id)
+              .single()
+
+            if (!existing) {
+              const { error: insertError } = await supabase
+                .from('playbook_purchases')
+                .insert({
+                  email: buyerEmail,
+                  stripe_session_id: session.id,
+                  stripe_payment_intent_id: session.payment_intent as string || null,
+                  amount: session.amount_total || 0,
+                  currency: session.currency || 'usd',
+                  playbook_month: playbookMonth,
+                  status: 'paid',
+                })
+
+              if (insertError) {
+                console.error('Error inserting playbook purchase:', insertError)
+              }
+            }
+          } else {
+            console.error('Missing email in playbook purchase/support webhook')
+          }
+        } catch (error) {
+          console.error('Error processing playbook purchase webhook:', error)
+        }
+      }
+    }
+
     // Handle playbook support payments
     if (session.metadata?.product === 'playbook' && session.metadata?.support_amount) {
       try {
