@@ -1,15 +1,14 @@
 /**
- * Email service using Resend (optional dependency)
+ * Email service using Resend API via native fetch (no npm package required)
  * 
- * This module gracefully handles missing resend package:
- * - If resend is not installed, returns { ok: false, skipped: true, reason: 'resend_not_installed' }
+ * This module uses the Resend REST API directly via fetch:
+ * - POST https://api.resend.com/emails
+ * - Authorization: Bearer ${RESEND_API_KEY}
+ * 
+ * Gracefully handles missing configuration:
  * - If RESEND_API_KEY is missing, returns { ok: false, skipped: true, reason: 'api_key_missing' }
  * - Never throws errors - always returns a result object
- * 
- * To enable email sending:
- * 1. Install: npm install resend
- * 2. Set RESEND_API_KEY environment variable
- * 3. Verify sender domain in Resend dashboard
+ * - Registration will still succeed even if email fails
  */
 
 interface RegistrationEmailData {
@@ -17,7 +16,7 @@ interface RegistrationEmailData {
   lastName: string
   country: string
   email: string
-  eventSlug: string
+  eventSlug?: string
   timestamp: string
 }
 
@@ -29,75 +28,57 @@ interface EmailResult {
 }
 
 /**
- * Safely attempts to get Resend client using dynamic import
- * Uses Function constructor to prevent webpack from analyzing the import at build time
+ * Send email via Resend API using native fetch
  */
-async function getResendClientSafely(): Promise<{ client: any; error: null } | { client: null; error: string }> {
-  // Check API key first
-  if (!process.env.RESEND_API_KEY) {
-    return { client: null, error: 'api_key_missing' }
-  }
-
-  try {
-    // Use dynamic import with a variable to prevent webpack static analysis
-    // This ensures webpack doesn't try to bundle resend at build time
-    const moduleName = 'resend'
-    const resendModule = await import(moduleName)
-    
-    // Handle different export patterns
-    const Resend = resendModule.Resend || resendModule.default?.Resend || resendModule.default
-    
-    if (!Resend) {
-      return { client: null, error: 'resend_class_not_found' }
-    }
-
-    const client = new Resend(process.env.RESEND_API_KEY)
-    return { client, error: null }
-  } catch (error: any) {
-    // Handle MODULE_NOT_FOUND or any other import error
-    const errorCode = error?.code || ''
-    const errorMessage = error?.message || ''
-    
-    if (errorCode === 'MODULE_NOT_FOUND' || 
-        errorMessage.includes('Cannot find module') ||
-        errorMessage.includes("Cannot resolve 'resend'")) {
-      return { client: null, error: 'resend_not_installed' }
-    }
-    return { client: null, error: `import_error: ${errorMessage || 'unknown'}` }
-  }
-}
-
-/**
- * Generic email sending function that never throws
- */
-async function sendBrandEmail(options: {
+async function sendEmailViaResendAPI(options: {
   to: string
   subject: string
   html: string
   from?: string
 }): Promise<EmailResult> {
-  const { client, error } = await getResendClientSafely()
-
-  if (!client) {
-    const reason = error || 'unknown'
-    console.warn(`[Email] Skipped sending to ${options.to}: ${reason}`)
-    return { ok: false, skipped: true, reason }
+  // Check API key
+  const apiKey = process.env.RESEND_API_KEY
+  if (!apiKey) {
+    console.warn('[Email] RESEND_API_KEY not configured. Skipping email.')
+    return { ok: false, skipped: true, reason: 'api_key_missing' }
   }
 
+  const fromEmail = options.from || process.env.RESEND_FROM_EMAIL || 'no-reply@mycreatorplaybook.com'
+
   try {
-    const fromEmail = options.from || process.env.RESEND_FROM_EMAIL || 'no-reply@mycreatorplaybook.com'
-    
-    const result = await client.emails.send({
-      from: fromEmail,
-      to: options.to,
-      subject: options.subject,
-      html: options.html,
+    const response = await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${apiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        from: fromEmail,
+        to: options.to,
+        subject: options.subject,
+        html: options.html,
+      }),
     })
 
-    return { ok: true, id: result.data?.id }
+    const data = await response.json()
+
+    if (!response.ok) {
+      console.error(`[Email] Resend API error (${response.status}):`, data)
+      return { 
+        ok: false, 
+        skipped: false, 
+        reason: data.message || `HTTP ${response.status}` 
+      }
+    }
+
+    return { ok: true, id: data.id }
   } catch (error: any) {
     console.error(`[Email] Failed to send to ${options.to}:`, error)
-    return { ok: false, skipped: false, reason: error.message || 'send_failed' }
+    return { 
+      ok: false, 
+      skipped: false, 
+      reason: error.message || 'network_error' 
+    }
   }
 }
 
@@ -163,12 +144,14 @@ export async function sendRegistrationNotification(data: RegistrationEmailData):
                           <p style="margin: 4px 0 0; color: #B7BCCB; font-size: 16px;">${escapeHtml(data.country)}</p>
                         </td>
                       </tr>
+                      ${data.eventSlug ? `
                       <tr>
                         <td style="padding: 8px 0;">
                           <strong style="color: #F5F7FF; font-size: 14px; text-transform: uppercase; letter-spacing: 0.5px;">Event</strong>
                           <p style="margin: 4px 0 0; color: #B7BCCB; font-size: 16px;">${escapeHtml(data.eventSlug)}</p>
                         </td>
                       </tr>
+                      ` : ''}
                       <tr>
                         <td style="padding: 8px 0 0;">
                           <strong style="color: #F5F7FF; font-size: 14px; text-transform: uppercase; letter-spacing: 0.5px;">Registered At</strong>
@@ -201,15 +184,20 @@ export async function sendRegistrationNotification(data: RegistrationEmailData):
 </html>
   `
 
-  return sendBrandEmail({
+  return sendEmailViaResendAPI({
     to: 'sav@mycreatorplaybook.com',
     subject: `New Event Registration: ${data.firstName} ${data.lastName}`,
     html,
   })
 }
 
-export async function sendRegistrationConfirmation(data: { email: string; firstName: string }): Promise<EmailResult> {
+export async function sendRegistrationConfirmation(data: { 
+  email: string
+  firstName: string
+  eventSlug?: string
+}): Promise<EmailResult> {
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || process.env.SITE_URL || 'https://mycreatorplaybook.com'
+  const eventText = data.eventSlug ? ` for ${data.eventSlug}` : ''
 
   const html = `
 <!DOCTYPE html>
@@ -237,7 +225,7 @@ export async function sendRegistrationConfirmation(data: { email: string; firstN
           <tr>
             <td style="padding: 40px;">
               <h2 style="margin: 0 0 16px; font-size: 24px; font-weight: 600; color: #F5F7FF;">
-                You're registered
+                You're registered${eventText ? ` for ${escapeHtml(data.eventSlug!)}` : ''}
               </h2>
               <p style="margin: 0 0 24px; font-size: 16px; line-height: 1.6; color: #B7BCCB;">
                 Hi ${escapeHtml(data.firstName)},
@@ -278,9 +266,9 @@ export async function sendRegistrationConfirmation(data: { email: string; firstN
 </html>
   `
 
-  return sendBrandEmail({
+  return sendEmailViaResendAPI({
     to: data.email,
-    subject: "You're registered for Creator Playbook Events",
+    subject: `You're registered${eventText} for Creator Playbook Events`,
     html,
   })
 }

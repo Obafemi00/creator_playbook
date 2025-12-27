@@ -29,13 +29,13 @@ function checkRateLimit(ip: string): boolean {
   return true
 }
 
-// Zod schema for validation - matches client form fields
+// Zod schema for validation
 const registrationSchema = z.object({
   firstName: z.string().min(1, 'First name is required').max(100),
   lastName: z.string().min(1, 'Last name is required').max(100),
   country: z.string().min(2, 'Country is required').max(100),
   email: z.string().email('Invalid email address').max(255),
-  eventSlug: z.string().default('current'),
+  eventSlug: z.string().optional(),
   honeypot: z.string().optional(), // Honeypot field
 })
 
@@ -48,6 +48,7 @@ export async function POST(req: NextRequest) {
     
     // Rate limiting
     if (!checkRateLimit(ip)) {
+      console.error('[events/register] Rate limit exceeded for IP:', ip)
       return NextResponse.json(
         { ok: false, error: 'Too many requests. Please try again later.' },
         { status: 429 }
@@ -59,7 +60,10 @@ export async function POST(req: NextRequest) {
     try {
       body = await req.json()
     } catch (parseError: any) {
-      console.error('[events/register] JSON parse error:', parseError)
+      console.error('[events/register] JSON parse error:', {
+        message: parseError.message,
+        error: parseError
+      })
       return NextResponse.json(
         { 
           ok: false, 
@@ -70,12 +74,10 @@ export async function POST(req: NextRequest) {
       )
     }
     
-    // Check honeypot (reject if filled)
+    // Check honeypot (silently return success if filled - bot detected)
     if (body.honeypot && body.honeypot.trim() !== '') {
-      return NextResponse.json(
-        { ok: false, error: 'Invalid request' },
-        { status: 400 }
-      )
+      console.warn('[events/register] Honeypot triggered - bot detected, silently returning success')
+      return NextResponse.json({ ok: true, message: 'Registration received' })
     }
 
     // Validate with Zod
@@ -88,7 +90,8 @@ export async function POST(req: NextRequest) {
       console.error('[events/register] Validation error:', {
         field,
         message: errorMessage,
-        errors: validationResult.error.errors
+        errors: validationResult.error.errors,
+        body
       })
       
       return NextResponse.json(
@@ -108,6 +111,7 @@ export async function POST(req: NextRequest) {
     const normalizedFirstName = data.firstName.trim()
     const normalizedLastName = data.lastName.trim()
     const normalizedCountry = data.country.trim()
+    const normalizedEventSlug = data.eventSlug?.trim() || null
 
     // Validate required fields are not empty after trim
     if (!normalizedFirstName) {
@@ -152,7 +156,10 @@ export async function POST(req: NextRequest) {
     try {
       supabase = createAdminClient()
     } catch (clientError: any) {
-      console.error('[events/register] Supabase client creation error:', clientError)
+      console.error('[events/register] Supabase client creation error:', {
+        message: clientError.message,
+        error: clientError
+      })
       return NextResponse.json(
         { 
           ok: false, 
@@ -163,6 +170,28 @@ export async function POST(req: NextRequest) {
       )
     }
     
+    // Check for existing registration (deduplication)
+    // Use the actual event_slug value (null or string) for comparison
+    const eventSlugForCheck = normalizedEventSlug || null
+    const { data: existingRegistration } = await supabase
+      .from('event_registrations')
+      .select('id')
+      .eq('email', normalizedEmail)
+      .eq('event_slug', eventSlugForCheck)
+      .maybeSingle()
+
+    if (existingRegistration) {
+      console.log('[events/register] Duplicate registration detected:', {
+        email: normalizedEmail,
+        eventSlug: eventSlugForCheck
+      })
+      return NextResponse.json({
+        ok: true,
+        message: 'Already registered',
+        id: existingRegistration.id
+      })
+    }
+    
     // Insert into Supabase using service role
     const { data: registration, error: insertError } = await supabase
       .from('event_registrations')
@@ -171,10 +200,9 @@ export async function POST(req: NextRequest) {
         last_name: normalizedLastName,
         country: normalizedCountry,
         email: normalizedEmail,
-        event_slug: data.eventSlug || 'current',
-        source: 'events-page',
-        ip: ip !== 'unknown' ? ip : null,
+        event_slug: normalizedEventSlug,
         user_agent: userAgent,
+        ip: ip !== 'unknown' ? ip : null,
       })
       .select()
       .single()
@@ -189,16 +217,24 @@ export async function POST(req: NextRequest) {
         error: insertError
       })
 
-      // Handle duplicate constraint violation
+      // Handle duplicate constraint violation (fallback check)
       if (insertError.code === '23505') { // Unique violation
-        return NextResponse.json(
-          { 
-            ok: false, 
-            error: 'This email is already registered for this event.',
-            detail: 'Duplicate email for event_slug'
-          },
-          { status: 409 }
-        )
+        // Try to get the existing record
+        const eventSlugForCheck = normalizedEventSlug || null
+        const { data: existing } = await supabase
+          .from('event_registrations')
+          .select('id')
+          .eq('email', normalizedEmail)
+          .eq('event_slug', eventSlugForCheck)
+          .maybeSingle()
+
+        if (existing) {
+          return NextResponse.json({
+            ok: true,
+            message: 'Already registered',
+            id: existing.id
+          })
+        }
       }
 
       // Handle missing table/column errors
@@ -252,7 +288,6 @@ export async function POST(req: NextRequest) {
     let emailDeliveryReason: string | undefined
 
     try {
-      // Dynamic import - only loads at runtime
       const { sendRegistrationNotification, sendRegistrationConfirmation } = await import('@/lib/email')
       
       const timestamp = new Date().toLocaleString('en-US', {
@@ -267,7 +302,7 @@ export async function POST(req: NextRequest) {
         lastName: normalizedLastName,
         country: normalizedCountry,
         email: normalizedEmail,
-        eventSlug: data.eventSlug || 'current',
+        eventSlug: normalizedEventSlug || undefined,
         timestamp,
       })
 
@@ -275,6 +310,7 @@ export async function POST(req: NextRequest) {
       const confirmationResult = await sendRegistrationConfirmation({
         email: normalizedEmail,
         firstName: normalizedFirstName,
+        eventSlug: normalizedEventSlug || undefined,
       })
 
       // Determine overall email status
@@ -287,9 +323,18 @@ export async function POST(req: NextRequest) {
         emailDeliveryStatus = 'failed'
         emailDeliveryReason = notificationResult.reason || confirmationResult.reason
       }
+
+      if (emailDeliveryStatus === 'skipped') {
+        console.warn('[events/register] Email sending skipped:', emailDeliveryReason)
+      } else if (emailDeliveryStatus === 'failed') {
+        console.error('[events/register] Email sending failed:', emailDeliveryReason)
+      }
     } catch (emailError: any) {
       // Import error or other unexpected error
-      console.error('[events/register] Email service error:', emailError)
+      console.error('[events/register] Email service error:', {
+        message: emailError.message,
+        error: emailError
+      })
       emailDeliveryStatus = 'skipped'
       emailDeliveryReason = emailError.message || 'email_service_unavailable'
     }

@@ -99,19 +99,20 @@ export function EventRegistrationForm() {
         throw new Error(errorMessage)
       }
 
-      // Ensure we got a success response
-      if (!data.ok && data.ok !== undefined) {
+      // Handle "Already registered" case - still show success
+      if (data.ok === true) {
+        // Success (including "Already registered")
+        setSubmitSuccess(true)
+        setFormData({ firstName: '', lastName: '', country: '', email: '' })
+        
+        // Reset success message after 5 seconds
+        setTimeout(() => {
+          setSubmitSuccess(false)
+        }, 5000)
+      } else {
+        // Unexpected response format
         throw new Error(data.error || 'Registration failed. Please try again.')
       }
-
-      // Success
-      setSubmitSuccess(true)
-      setFormData({ firstName: '', lastName: '', country: '', email: '' })
-      
-      // Reset success message after 5 seconds
-      setTimeout(() => {
-        setSubmitSuccess(false)
-      }, 5000)
     } catch (error) {
       console.error('Registration error:', error)
       setSubmitError(error instanceof Error ? error.message : 'Something went wrong. Please try again.')
