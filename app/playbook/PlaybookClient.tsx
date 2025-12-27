@@ -1,485 +1,343 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { motion, useReducedMotion, AnimatePresence } from 'framer-motion'
-import { createSupportCheckoutSession } from '@/app/actions/stripe'
-import { SupportSelector } from '@/components/SupportSelector'
-import { useSearchParams } from 'next/navigation'
-import { createClient } from '@/lib/supabase/client'
+import { motion, useReducedMotion } from 'framer-motion'
 
-interface PurchaseStatus {
-  paid: boolean
-  status: string | null
-  email: string | null
-  session_id?: string | null
-}
+// Email gate configuration
+const PLAYBOOK_EMAIL_GATE_ENABLED = true
+
+// PDF file path (URL-encoded for spaces)
+const PLAYBOOK_PDF_PATH = '/docs/100%20Prompts%20for%20Creators.pdf'
 
 export default function PlaybookClient() {
-  const [selectedAmount, setSelectedAmount] = useState<number | null>(null)
-  const [loading, setLoading] = useState(false)
   const [email, setEmail] = useState('')
-  const [showEmailInput, setShowEmailInput] = useState(false)
-  const [userEmail, setUserEmail] = useState<string | null>(null)
-  const [purchaseStatus, setPurchaseStatus] = useState<PurchaseStatus>({ paid: false, status: null, email: null, session_id: null })
-  const [verifyingPayment, setVerifyingPayment] = useState(false)
   const [isUnlocked, setIsUnlocked] = useState(false)
-  const [unlockAnimation, setUnlockAnimation] = useState(false)
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [submitError, setSubmitError] = useState<string | null>(null)
+  const [submitSuccess, setSubmitSuccess] = useState(false)
   const prefersReducedMotion = useReducedMotion()
-  const searchParams = useSearchParams()
-  const supportSuccess = searchParams?.get('support_success')
-  const sessionId = searchParams?.get('session_id')
-  const canceled = searchParams?.get('canceled')
 
-  // Check if user is logged in
+  // Check localStorage on mount
   useEffect(() => {
-    const checkUser = async () => {
-      const supabase = createClient()
-      const { data: { user } } = await supabase.auth.getUser()
-      if (user?.email) {
-        setUserEmail(user.email)
-      }
-    }
-    checkUser()
-  }, [])
-
-  // Check purchase status on mount and when session_id changes
-  useEffect(() => {
-    if (sessionId) {
-      checkPurchaseStatus(sessionId, null)
-    } else if (userEmail) {
-      // Check by email for returning users
-      checkPurchaseStatus(null, userEmail)
-    }
-  }, [sessionId, userEmail])
-
-  // Poll for payment verification if success=1 but not yet verified
-  useEffect(() => {
-    if (supportSuccess === '1' && sessionId && !purchaseStatus.paid && !verifyingPayment) {
-      setVerifyingPayment(true)
-      pollPurchaseStatus(sessionId)
-    }
-  }, [supportSuccess, sessionId, purchaseStatus.paid, verifyingPayment])
-
-  // Show canceled message
-  useEffect(() => {
-    if (canceled === '1') {
-      // Could show a toast here
-      console.log('Payment canceled')
-    }
-  }, [canceled])
-
-  // Trigger unlock animation when purchase status changes to paid
-  useEffect(() => {
-    if (purchaseStatus.paid && !isUnlocked) {
+    if (!PLAYBOOK_EMAIL_GATE_ENABLED) {
       setIsUnlocked(true)
-      if (!prefersReducedMotion) {
-        setUnlockAnimation(true)
-        setTimeout(() => setUnlockAnimation(false), 1000)
-      }
-    }
-  }, [purchaseStatus.paid, isUnlocked, prefersReducedMotion])
-
-  const checkPurchaseStatus = async (sessionIdParam: string | null, emailParam: string | null) => {
-    try {
-      const queryParam = sessionIdParam 
-        ? `session_id=${sessionIdParam}` 
-        : emailParam 
-        ? `email=${encodeURIComponent(emailParam)}` 
-        : null
-
-      if (!queryParam) return
-
-      const response = await fetch(`/api/purchases/status?${queryParam}`)
-      const data = await response.json()
-      setPurchaseStatus(data)
-      
-      // Update sessionId if we got it from email lookup
-      if (data.session_id && !sessionIdParam) {
-        // Store in URL for download endpoint
-        const url = new URL(window.location.href)
-        url.searchParams.set('session_id', data.session_id)
-        window.history.replaceState({}, '', url.toString())
-      }
-    } catch (error) {
-      console.error('Error checking purchase status:', error)
-    }
-  }
-
-  const pollPurchaseStatus = async (sessionIdParam: string) => {
-    const maxAttempts = 15 // 15 seconds max
-    let attempts = 0
-    const baseDelay = 1000 // Start with 1 second
-
-    const poll = async (): Promise<void> => {
-      if (attempts >= maxAttempts) {
-        setVerifyingPayment(false)
-        return
-      }
-
-      attempts++
-      
-      try {
-        const response = await fetch(`/api/purchases/status?session_id=${sessionIdParam}`)
-        const data = await response.json()
-        
-        setPurchaseStatus(data)
-
-        // If paid, stop polling
-        if (data.paid) {
-          setVerifyingPayment(false)
-          return
-        }
-
-        // If still not paid, continue polling with exponential backoff
-        const delay = Math.min(baseDelay * Math.pow(1.5, attempts - 1), 3000) // Cap at 3 seconds
-        setTimeout(() => poll(), delay)
-      } catch (error) {
-        console.error('Error polling purchase status:', error)
-        // Continue polling on error (might be temporary)
-        if (attempts < maxAttempts) {
-          const delay = Math.min(baseDelay * Math.pow(1.5, attempts - 1), 3000)
-          setTimeout(() => poll(), delay)
-        } else {
-          setVerifyingPayment(false)
-        }
-      }
-    }
-
-    poll()
-  }
-
-  const handleSupport = async () => {
-    if (!selectedAmount) return
-
-    // If user is logged in, use their email. Otherwise, require email input for guest support
-    const supportEmail = userEmail || email
-    
-    if (!supportEmail) {
-      setShowEmailInput(true)
       return
     }
+
+    const stored = localStorage.getItem('playbook_unlocked')
+    if (stored === 'true') {
+      setIsUnlocked(true)
+    }
+  }, [])
+
+  const handleEmailSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setSubmitError(null)
+    setIsSubmitting(true)
 
     // Basic email validation
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-    if (!emailRegex.test(supportEmail)) {
-      alert('Please enter a valid email address')
+    if (!emailRegex.test(email)) {
+      setSubmitError('Please enter a valid email address')
+      setIsSubmitting(false)
       return
     }
 
-    setLoading(true)
     try {
-      const { url } = await createSupportCheckoutSession(
-        selectedAmount, 
-        supportEmail
-      )
-      
-      if (url) {
-        window.location.href = url
+      const response = await fetch('/api/toolbox-signup', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email }),
+      })
+
+      if (!response.ok) {
+        const data = await response.json()
+        throw new Error(data.error || 'Failed to unlock playbook')
       }
+
+      // Success: unlock and persist
+      setIsUnlocked(true)
+      setSubmitSuccess(true)
+      localStorage.setItem('playbook_unlocked', 'true')
+      
+      // Clear success message after a moment
+      setTimeout(() => setSubmitSuccess(false), 3000)
     } catch (error) {
-      console.error('Support checkout error:', error)
-      alert(error instanceof Error ? error.message : 'Failed to create checkout session. Please try again.')
-      setLoading(false)
+      console.error('Email signup error:', error)
+      setSubmitError(error instanceof Error ? error.message : 'Something went wrong. Please try again.')
+    } finally {
+      setIsSubmitting(false)
     }
   }
 
-  const handleDownload = () => {
-    if (!purchaseStatus.paid) return
-    
-    // Use session_id from status response or URL
-    const downloadSessionId = purchaseStatus.session_id || sessionId
-    if (!downloadSessionId) return
-    
-    // Open secure download endpoint
-    window.open(`/api/playbook/download?session_id=${downloadSessionId}`, '_blank')
+  const handleAccessPlaybook = () => {
+    if (isUnlocked) {
+      window.open(PLAYBOOK_PDF_PATH, '_blank', 'noopener,noreferrer')
+    }
   }
 
   return (
-    <div className="relative min-h-screen overflow-hidden">
-      {/* Ambient background animation */}
+    <div className="relative min-h-screen overflow-hidden bg-[var(--bg)]">
+      {/* Subtle background accents - very minimal */}
       {!prefersReducedMotion && (
-        <motion.div
-          className="fixed inset-0 -z-10 opacity-30"
-          animate={{
-            background: [
-              'radial-gradient(circle at 20% 50%, rgba(255, 122, 26, 0.1), transparent 50%)',
-              'radial-gradient(circle at 80% 50%, rgba(95, 179, 179, 0.1), transparent 50%)',
-              'radial-gradient(circle at 50% 20%, rgba(198, 183, 226, 0.1), transparent 50%)',
-              'radial-gradient(circle at 20% 50%, rgba(255, 122, 26, 0.1), transparent 50%)',
-            ],
-          }}
-          transition={{
-            duration: 20,
-            repeat: Infinity,
-            ease: 'linear',
-          }}
-        />
+        <>
+          {/* Grain texture overlay */}
+          <div 
+            className="fixed inset-0 opacity-[0.015] dark:opacity-[0.03] pointer-events-none"
+            style={{
+              backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='4' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E")`,
+              backgroundSize: '200px 200px',
+            }}
+          />
+          
+          {/* Soft gradient accents */}
+          <motion.div
+            className="absolute top-0 right-0 w-96 h-96 rounded-full opacity-[0.03] dark:opacity-[0.05] pointer-events-none blur-3xl"
+            style={{ background: 'radial-gradient(circle, var(--orange), transparent)' }}
+            animate={{
+              scale: [1, 1.1, 1],
+              x: [0, 30, 0],
+              y: [0, -30, 0],
+            }}
+            transition={{
+              duration: 25,
+              repeat: Infinity,
+              ease: 'linear',
+            }}
+          />
+          <motion.div
+            className="absolute bottom-0 left-0 w-80 h-80 rounded-full opacity-[0.03] dark:opacity-[0.05] pointer-events-none blur-3xl"
+            style={{ background: 'radial-gradient(circle, var(--teal), transparent)' }}
+            animate={{
+              scale: [1, 1.15, 1],
+              x: [0, -20, 0],
+              y: [0, 20, 0],
+            }}
+            transition={{
+              duration: 30,
+              repeat: Infinity,
+              ease: 'linear',
+            }}
+          />
+        </>
       )}
 
-      <section className="pt-6 md:pt-8 pb-24 px-6 lg:px-8 relative">
+      <section className="pt-0 pb-24 md:pb-32 px-6 lg:px-8 relative z-10">
         <div className="max-w-4xl mx-auto">
           {/* Hero Section */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{
-              duration: prefersReducedMotion ? 0.3 : 0.6,
+              duration: prefersReducedMotion ? 0.3 : 0.8,
               ease: [0.4, 0, 0.2, 1],
             }}
-            className="text-center mb-12 md:mb-16"
+            className="text-center mb-20 md:mb-28"
           >
-            <h1 className="font-display text-5xl md:text-6xl lg:text-7xl font-bold mb-4 md:mb-6 text-charcoal dark:text-[var(--text)]">
-              Support the Team
+            <h1 className="font-display text-5xl md:text-6xl lg:text-7xl font-bold mb-8 md:mb-10 text-charcoal dark:text-[var(--text)] leading-tight tracking-tight">
+              Creator Playbook
             </h1>
-            
-            <motion.div
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{
-                duration: prefersReducedMotion ? 0.3 : 0.5,
-                delay: prefersReducedMotion ? 0 : 0.2,
-                ease: [0.4, 0, 0.2, 1],
-              }}
-              className="space-y-4 text-lg md:text-xl text-charcoal/80 dark:text-[var(--text)]/80 leading-relaxed max-w-2xl mx-auto"
-            >
-              <p>
-                This whole creator project is possible because of people like you.
-              </p>
-              <p>
-                One Playbook, released monthly. Built with intention.
-              </p>
-            </motion.div>
-          </motion.div>
-
-          {/* Support Selector */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{
-              duration: prefersReducedMotion ? 0.3 : 0.5,
-              delay: prefersReducedMotion ? 0 : 0.3,
-              ease: [0.4, 0, 0.2, 1],
-            }}
-            className="mb-12"
-          >
-            <SupportSelector
-              selectedAmount={selectedAmount}
-              onSelect={(amount) => {
-                setSelectedAmount(amount)
-                setShowEmailInput(false)
-              }}
-              prefersReducedMotion={!!prefersReducedMotion}
-            />
-          </motion.div>
-
-          {/* Email input for guest support */}
-          {showEmailInput && !userEmail && (
-            <motion.div
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: 'auto' }}
-              exit={{ opacity: 0, height: 0 }}
-              transition={{ duration: 0.3 }}
-              className="mb-8 max-w-md mx-auto"
-            >
-              <input
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter' && email) {
-                    handleSupport()
-                  }
-                }}
-                placeholder="your@email.com"
-                className="w-full px-6 py-4 rounded-xl border-2 border-charcoal/20 dark:border-[var(--border)] bg-white/80 dark:bg-[var(--card)]/50 focus:outline-none focus:ring-2 focus:ring-orange focus:border-transparent text-charcoal dark:text-[var(--text)]"
-                autoFocus
-              />
-            </motion.div>
-          )}
-
-          {/* Support Button */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ 
-              opacity: selectedAmount ? 1 : 0.5,
-              y: 0,
-            }}
-            transition={{
-              duration: prefersReducedMotion ? 0.2 : 0.4,
-              delay: prefersReducedMotion ? 0 : 0.4,
-              ease: [0.4, 0, 0.2, 1],
-            }}
-            className="flex justify-center mb-12"
-          >
-            <motion.button
-              onClick={handleSupport}
-              disabled={!selectedAmount || loading}
-              whileHover={!prefersReducedMotion && selectedAmount ? { 
-                y: -2,
-                boxShadow: '0 10px 25px -5px rgba(255, 122, 26, 0.3), 0 8px 10px -6px rgba(255, 122, 26, 0.2)',
-              } : {}}
-              whileTap={{ scale: 0.98 }}
-              className={`
-                px-12 py-5 rounded-full font-medium text-lg
-                transition-all duration-300
-                ${
-                  selectedAmount && !loading
-                    ? 'bg-orange text-offwhite hover:bg-orange/90 cursor-pointer'
-                    : 'bg-charcoal/20 dark:bg-[var(--card)]/30 text-charcoal/40 dark:text-[var(--text)]/40 cursor-not-allowed'
-                }
-              `}
-            >
-              {loading ? (
-                <span className="flex items-center gap-2">
-                  <motion.span
-                    animate={{ rotate: 360 }}
-                    transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
-                    className="inline-block w-4 h-4 border-2 border-current border-t-transparent rounded-full"
-                  />
-                  Processing...
-                </span>
-              ) : (
-                'Support'
-              )}
-            </motion.button>
-          </motion.div>
-
-          {/* Monthly Context */}
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{
-              duration: prefersReducedMotion ? 0.2 : 0.5,
-              delay: prefersReducedMotion ? 0 : 0.5,
-              ease: [0.4, 0, 0.2, 1],
-            }}
-            className="text-center mb-12"
-          >
-            <p className="text-sm text-charcoal/60 dark:text-[var(--text)]/60">
-              New Playbook released at the beginning of every month.
+            <p className="text-lg md:text-xl lg:text-2xl text-charcoal/70 dark:text-[var(--text)]/70 leading-relaxed max-w-2xl mx-auto">
+              Simple tools designed to help creators think clearer and move faster. Zero fluff. One job per tool.
             </p>
           </motion.div>
 
-          {/* Download Section */}
+          {/* Featured Playbook Card */}
           <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
+            initial={{ opacity: 0, scale: 0.95, y: 20 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
             transition={{
-              duration: prefersReducedMotion ? 0.3 : 0.5,
-              delay: prefersReducedMotion ? 0 : 0.6,
+              duration: prefersReducedMotion ? 0.3 : 0.7,
+              delay: prefersReducedMotion ? 0 : 0.2,
               ease: [0.4, 0, 0.2, 1],
             }}
-            className="text-center"
+            whileHover={!prefersReducedMotion ? { 
+              y: -6,
+              transition: { duration: 0.4, ease: 'easeOut' }
+            } : {}}
+            className="relative group mb-16 md:mb-20"
           >
-            <div className="bg-white/40 dark:bg-[var(--card)]/50 backdrop-blur-sm rounded-2xl p-8 md:p-10 border border-charcoal/10 dark:border-[var(--border)] max-w-2xl mx-auto relative overflow-hidden">
-              {/* Unlock glow effect */}
-              <AnimatePresence>
-                {unlockAnimation && !prefersReducedMotion && (
-                  <motion.div
-                    initial={{ opacity: 0, scale: 0.8 }}
-                    animate={{ opacity: [0, 0.3, 0], scale: [0.8, 1.2, 1] }}
-                    exit={{ opacity: 0 }}
-                    transition={{ duration: 0.8, ease: 'easeOut' }}
-                    className="absolute inset-0 bg-orange/20 rounded-2xl pointer-events-none"
-                  />
-                )}
-              </AnimatePresence>
+            {/* Card background - premium featured style */}
+            <div className="relative bg-white/70 dark:bg-[var(--card)]/70 backdrop-blur-md rounded-3xl md:rounded-[2rem] p-10 md:p-12 lg:p-16 border border-charcoal/5 dark:border-[var(--border)] shadow-lg hover:shadow-xl transition-all duration-500">
+              {/* Subtle decorative elements */}
+              <div className="absolute top-6 right-6 w-24 h-24 opacity-[0.04] dark:opacity-[0.08] pointer-events-none">
+                <svg viewBox="0 0 100 100" className="w-full h-full">
+                  <circle cx="50" cy="50" r="35" fill="none" stroke="var(--orange)" strokeWidth="0.5" />
+                  <circle cx="50" cy="50" r="20" fill="none" stroke="var(--orange)" strokeWidth="0.3" />
+                </svg>
+              </div>
+              
+              <div className="absolute bottom-6 left-6 w-16 h-16 opacity-[0.03] dark:opacity-[0.06] pointer-events-none">
+                <svg viewBox="0 0 100 100" className="w-full h-full">
+                  <path d="M50 20 L80 80 L20 80 Z" fill="none" stroke="var(--teal)" strokeWidth="0.5" />
+                </svg>
+              </div>
 
-              <h2 className="font-display text-2xl md:text-3xl font-bold mb-4 text-charcoal dark:text-[var(--text)]">
-                Download the Playbook
-              </h2>
-              <p className="text-charcoal/70 dark:text-[var(--text)]/70 mb-6 leading-relaxed">
-                Get the current month's Playbook. Supporting the team helps us continue creating these resources.
-              </p>
+              {/* Icon - light bulb in corner */}
+              <div className="absolute top-8 right-8 md:top-10 md:right-10 text-charcoal/20 dark:text-[var(--text)]/20 group-hover:text-orange/40 transition-colors duration-500">
+                <svg className="w-10 h-10 md:w-12 md:h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+                </svg>
+              </div>
 
-              {/* Verifying payment state */}
-              {verifyingPayment && (
-                <motion.div
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  className="mb-4"
-                >
-                  <p className="text-sm text-charcoal/60 dark:text-[var(--text)]/60 flex items-center justify-center gap-2">
-                    <motion.span
-                      animate={{ rotate: 360 }}
-                      transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
-                      className="inline-block w-4 h-4 border-2 border-orange border-t-transparent rounded-full"
-                    />
-                    Verifying payment...
-                  </p>
-                </motion.div>
-              )}
-
-              {/* Download button */}
-              <motion.button
-                onClick={handleDownload}
-                disabled={!isUnlocked || verifyingPayment}
-                initial={false}
-                animate={
-                  unlockAnimation && !prefersReducedMotion
-                    ? {
-                        scale: [1, 1.05, 1],
-                        rotate: [0, -2, 2, -2, 0],
-                      }
-                    : {}
-                }
-                transition={{ duration: 0.5, ease: 'easeOut' }}
-                whileHover={!prefersReducedMotion && isUnlocked ? { y: -2, scale: 1.02 } : {}}
-                whileTap={isUnlocked ? { scale: 0.98 } : {}}
-                className={`
-                  inline-flex items-center gap-2 px-8 py-4 rounded-full font-medium text-lg
-                  transition-all duration-300
-                  ${
-                    isUnlocked && !verifyingPayment
-                      ? 'bg-orange text-offwhite hover:bg-orange/90 cursor-pointer shadow-lg shadow-orange/20'
-                      : 'bg-charcoal/20 dark:bg-[var(--card)]/30 text-charcoal/40 dark:text-[var(--text)]/40 cursor-not-allowed'
-                  }
-                `}
-              >
-                {isUnlocked ? (
-                  <>
-                    <svg
-                      className="w-5 h-5"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
-                      />
-                    </svg>
-                    Download
-                  </>
-                ) : (
-                  <>
-                    <svg
-                      className="w-5 h-5"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
-                      />
-                    </svg>
-                    Unlocks after Support
-                  </>
-                )}
-              </motion.button>
-
-              {!isUnlocked && !verifyingPayment && (
-                <p className="text-xs text-charcoal/50 dark:text-[var(--text)]/50 mt-3">
-                  Support the team to unlock the download
+              {/* Content */}
+              <div className="relative z-10 max-w-2xl">
+                <h2 className="font-display text-3xl md:text-4xl lg:text-5xl font-bold mb-4 md:mb-6 text-charcoal dark:text-[var(--text)] leading-tight">
+                  100 Prompts for Creators
+                </h2>
+                <p className="text-lg md:text-xl text-charcoal/60 dark:text-[var(--text)]/60 mb-10 md:mb-12 leading-relaxed">
+                  Thought-provoking questions to clarify your creative direction and unlock new ideas.
                 </p>
-              )}
+
+                {/* CTA Button with unlock badge */}
+                <div className="flex items-center gap-4">
+                  <motion.button
+                    onClick={handleAccessPlaybook}
+                    disabled={!isUnlocked}
+                    whileHover={!prefersReducedMotion && isUnlocked ? { 
+                      scale: 1.02,
+                      boxShadow: '0 12px 30px -8px rgba(255, 122, 26, 0.4)',
+                    } : {}}
+                    whileTap={isUnlocked ? { scale: 0.98 } : {}}
+                    className={`
+                      px-8 md:px-10 py-4 md:py-5 rounded-xl font-semibold text-base md:text-lg
+                      transition-all duration-300
+                      focus:outline-none focus:ring-2 focus:ring-orange/50 focus:ring-offset-2 dark:focus:ring-offset-[var(--bg)]
+                      ${
+                        isUnlocked
+                          ? 'bg-orange text-offwhite hover:bg-orange/90 cursor-pointer shadow-lg shadow-orange/25'
+                          : 'bg-charcoal/5 dark:bg-[var(--card)]/30 text-charcoal/30 dark:text-[var(--text)]/30 cursor-not-allowed'
+                      }
+                    `}
+                  >
+                    Access playbook
+                  </motion.button>
+
+                  {/* Unlocked badge */}
+                  {isUnlocked && (
+                    <motion.div
+                      initial={{ opacity: 0, scale: 0.8, x: -10 }}
+                      animate={{ opacity: 1, scale: 1, x: 0 }}
+                      transition={{ duration: 0.4, ease: 'easeOut' }}
+                      className="flex items-center gap-2 text-sm text-charcoal/50 dark:text-[var(--text)]/50"
+                    >
+                      <svg className="w-4 h-4 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                      </svg>
+                      <span>Unlocked</span>
+                    </motion.div>
+                  )}
+                </div>
+              </div>
             </div>
           </motion.div>
+
+          {/* Email Gate Section */}
+          {PLAYBOOK_EMAIL_GATE_ENABLED && !isUnlocked && (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{
+                duration: prefersReducedMotion ? 0.3 : 0.6,
+                delay: prefersReducedMotion ? 0 : 0.4,
+                ease: [0.4, 0, 0.2, 1],
+              }}
+              className="max-w-md mx-auto text-center"
+            >
+              <p className="text-charcoal/60 dark:text-[var(--text)]/60 mb-3 text-base md:text-lg leading-relaxed">
+                Enter your email to unlock this toolkit.
+              </p>
+              <p className="text-charcoal/50 dark:text-[var(--text)]/50 mb-8 text-sm md:text-base">
+                No spam. Just the journey.
+              </p>
+
+              <form onSubmit={handleEmailSubmit} className="space-y-4">
+                <div className="relative">
+                  <input
+                    type="email"
+                    value={email}
+                    onChange={(e) => {
+                      setEmail(e.target.value)
+                      setSubmitError(null)
+                    }}
+                    placeholder="your@email.com"
+                    disabled={isSubmitting}
+                    className={`
+                      w-full px-6 py-4 md:py-5 rounded-xl
+                      border-2 bg-white/90 dark:bg-[var(--card)]/60
+                      text-charcoal dark:text-[var(--text)]
+                      placeholder:text-charcoal/30 dark:placeholder:text-[var(--text)]/30
+                      focus:outline-none focus:ring-2 focus:ring-orange/50 focus:border-orange/50
+                      transition-all duration-300
+                      disabled:opacity-50 disabled:cursor-not-allowed
+                      ${
+                        submitError
+                          ? 'border-red-300 dark:border-red-500/50'
+                          : 'border-charcoal/10 dark:border-[var(--border)]'
+                      }
+                    `}
+                    autoFocus
+                  />
+                  {submitSuccess && (
+                    <motion.div
+                      initial={{ opacity: 0, scale: 0.8 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      className="absolute right-4 top-1/2 -translate-y-1/2 text-green-500"
+                    >
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                      </svg>
+                    </motion.div>
+                  )}
+                </div>
+
+                {submitError && (
+                  <motion.p
+                    initial={{ opacity: 0, y: -10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="text-sm text-red-500 dark:text-red-400"
+                  >
+                    {submitError}
+                  </motion.p>
+                )}
+
+                <motion.button
+                  type="submit"
+                  disabled={isSubmitting || !email}
+                  whileHover={!prefersReducedMotion && !isSubmitting && email ? { 
+                    scale: 1.02,
+                    boxShadow: '0 10px 25px -5px rgba(255, 122, 26, 0.35)',
+                  } : {}}
+                  whileTap={!isSubmitting ? { scale: 0.98 } : {}}
+                  className={`
+                    w-full px-8 py-4 md:py-5 rounded-xl font-semibold text-base md:text-lg
+                    transition-all duration-300
+                    focus:outline-none focus:ring-2 focus:ring-orange/50 focus:ring-offset-2 dark:focus:ring-offset-[var(--bg)]
+                    ${
+                      isSubmitting || !email
+                        ? 'bg-charcoal/10 dark:bg-[var(--card)]/30 text-charcoal/30 dark:text-[var(--text)]/30 cursor-not-allowed'
+                        : 'bg-orange text-offwhite hover:bg-orange/90 cursor-pointer shadow-lg shadow-orange/25'
+                    }
+                  `}
+                >
+                  {isSubmitting ? (
+                    <span className="flex items-center justify-center gap-2">
+                      <motion.span
+                        animate={{ rotate: 360 }}
+                        transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
+                        className="inline-block w-4 h-4 border-2 border-current border-t-transparent rounded-full"
+                      />
+                      Unlocking...
+                    </span>
+                  ) : submitSuccess ? (
+                    'Unlocked ✓'
+                  ) : (
+                    'Unlock toolkit'
+                  )}
+                </motion.button>
+              </form>
+            </motion.div>
+          )}
         </div>
       </section>
     </div>
