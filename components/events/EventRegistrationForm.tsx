@@ -107,7 +107,7 @@ export function EventRegistrationForm() {
             error: data.error,
             detail: data.detail,
             details: data.details,
-            requestId: data.requestId
+            debugId: data.debugId
           })
         }
         

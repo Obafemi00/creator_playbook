@@ -2,8 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
 import { createAdminClient } from '@/lib/supabase/admin'
 
-// Generate short request ID for debugging
-function generateRequestId(): string {
+// Generate short debug ID for error tracking
+function generateDebugId(): string {
   return Math.random().toString(36).substring(2, 9)
 }
 
@@ -18,29 +18,29 @@ const registrationSchema = z.object({
 })
 
 export async function POST(req: NextRequest) {
-  const requestId = generateRequestId()
+  const debugId = generateDebugId()
   
   try {
     // Check required environment variables first
     if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
-      console.error('[events/register] missing service role key', { requestId })
+      console.error('[events/register] missing service role key', { debugId })
       return NextResponse.json(
         { 
           ok: false, 
           error: 'Server misconfigured: SUPABASE_SERVICE_ROLE_KEY missing',
-          requestId
+          debugId
         },
         { status: 500 }
       )
     }
 
     if (!process.env.NEXT_PUBLIC_SUPABASE_URL) {
-      console.error('[events/register] missing NEXT_PUBLIC_SUPABASE_URL', { requestId })
+      console.error('[events/register] missing NEXT_PUBLIC_SUPABASE_URL', { debugId })
       return NextResponse.json(
         { 
           ok: false, 
           error: 'Server misconfigured: NEXT_PUBLIC_SUPABASE_URL missing',
-          requestId
+          debugId
         },
         { status: 500 }
       )
@@ -52,7 +52,7 @@ export async function POST(req: NextRequest) {
       body = await req.json()
     } catch (parseError: any) {
       console.error('[events/register] JSON parse error', {
-        requestId,
+        debugId,
         message: parseError.message,
         error: parseError
       })
@@ -61,7 +61,7 @@ export async function POST(req: NextRequest) {
           ok: false, 
           error: 'Invalid request format. Expected JSON.',
           detail: parseError.message,
-          requestId
+          debugId
         },
         { status: 400 }
       )
@@ -69,8 +69,8 @@ export async function POST(req: NextRequest) {
     
     // Check honeypot (silently return success if filled - bot detected)
     if (body.honeypot && body.honeypot.trim() !== '') {
-      console.warn('[events/register] Honeypot triggered - bot detected', { requestId })
-      return NextResponse.json({ ok: true, message: 'Registration received', requestId })
+      console.warn('[events/register] Honeypot triggered - bot detected', { debugId })
+      return NextResponse.json({ ok: true, message: 'Registration received' })
     }
 
     // Validate with Zod
@@ -82,7 +82,7 @@ export async function POST(req: NextRequest) {
       }))
       
       console.error('[events/register] Validation error', {
-        requestId,
+        debugId,
         errors: zodErrors,
         body
       })
@@ -92,7 +92,7 @@ export async function POST(req: NextRequest) {
           ok: false, 
           error: 'Validation error',
           details: zodErrors,
-          requestId
+          debugId
         },
         { status: 400 }
       )
@@ -114,7 +114,7 @@ export async function POST(req: NextRequest) {
           ok: false, 
           error: 'All fields are required',
           detail: 'One or more required fields are empty',
-          requestId
+          debugId
         },
         { status: 400 }
       )
@@ -124,7 +124,7 @@ export async function POST(req: NextRequest) {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
     if (!emailRegex.test(normalizedEmail)) {
       return NextResponse.json(
-        { ok: false, error: 'Invalid email address format', detail: 'email format validation failed', requestId },
+        { ok: false, error: 'Invalid email address format', detail: 'email format validation failed', debugId },
         { status: 400 }
       )
     }
@@ -135,7 +135,7 @@ export async function POST(req: NextRequest) {
       supabase = createAdminClient()
     } catch (clientError: any) {
       console.error('[events/register] Supabase client creation error', {
-        requestId,
+        debugId,
         message: clientError.message,
         error: clientError
       })
@@ -144,7 +144,7 @@ export async function POST(req: NextRequest) {
           ok: false, 
           error: 'Database configuration error',
           detail: clientError.message || 'Failed to create database client',
-          requestId
+          debugId
         },
         { status: 500 }
       )
@@ -162,6 +162,7 @@ export async function POST(req: NextRequest) {
           country: normalizedCountry,
           email: normalizedEmail,
           event_slug: normalizedEventSlug,
+          source: 'website', // Track where registration came from
         })
         .select()
         .single()
@@ -170,7 +171,7 @@ export async function POST(req: NextRequest) {
       insertError = error
     } catch (insertException: any) {
       console.error('[events/register] Exception during insert', {
-        requestId,
+        debugId,
         message: insertException.message,
         stack: insertException.stack,
         error: insertException
@@ -180,7 +181,7 @@ export async function POST(req: NextRequest) {
           ok: false,
           error: 'Internal error',
           detail: insertException.message || 'Database insert exception',
-          requestId
+          debugId
         },
         { status: 500 }
       )
@@ -189,7 +190,7 @@ export async function POST(req: NextRequest) {
     // Handle insert errors with detailed logging
     if (insertError) {
       console.error('[events/register] Supabase insert error', {
-        requestId,
+        debugId,
         message: insertError.message,
         code: insertError.code,
         details: insertError.details,
@@ -203,8 +204,8 @@ export async function POST(req: NextRequest) {
           { 
             ok: false, 
             error: 'Database table not found. Please run the migration.',
-            detail: `Table 'event_registrations' does not exist. Run: supabase/schema.sql`,
-            requestId
+            detail: `Table 'event_registrations' does not exist. Run migration: supabase/migrations/20251227_create_event_registrations.sql`,
+            debugId
           },
           { status: 500 }
         )
@@ -216,7 +217,7 @@ export async function POST(req: NextRequest) {
             ok: false, 
             error: 'Database column mismatch. Please check the migration.',
             detail: insertError.message || 'Column name mismatch',
-            requestId
+            debugId
           },
           { status: 500 }
         )
@@ -228,20 +229,20 @@ export async function POST(req: NextRequest) {
           ok: false, 
           error: 'Failed to save registration. Please try again.',
           detail: `Database error: ${insertError.code} - ${insertError.message}`,
-          requestId
+          debugId
         },
         { status: 500 }
       )
     }
 
     if (!registration) {
-      console.error('[events/register] Insert succeeded but no data returned', { requestId })
+      console.error('[events/register] Insert succeeded but no data returned', { debugId })
       return NextResponse.json(
         { 
           ok: false, 
           error: 'Registration saved but confirmation failed.',
           detail: 'No data returned from insert',
-          requestId
+          debugId
         },
         { status: 500 }
       )
@@ -290,19 +291,19 @@ export async function POST(req: NextRequest) {
 
       if (emailDeliveryStatus === 'skipped') {
         console.warn('[events/register] Email sending skipped', {
-          requestId,
+          debugId,
           reason: emailDeliveryReason
         })
       } else if (emailDeliveryStatus === 'failed') {
         console.error('[events/register] Email sending failed', {
-          requestId,
+          debugId,
           reason: emailDeliveryReason
         })
       }
     } catch (emailError: any) {
       // Import error or other unexpected error
       console.error('[events/register] Email service error', {
-        requestId,
+        debugId,
         message: emailError.message,
         stack: emailError.stack,
         error: emailError
@@ -317,13 +318,12 @@ export async function POST(req: NextRequest) {
       ok: true, 
       id: registration.id,
       email_delivery: emailDeliveryStatus,
-      ...(emailDeliveryReason && { email_delivery_reason: emailDeliveryReason }),
-      requestId
+      ...(emailDeliveryReason && { email_delivery_reason: emailDeliveryReason })
     })
   } catch (error: any) {
     // Catch-all for unexpected errors
     console.error('[events/register] Unexpected error', {
-      requestId,
+      debugId,
       message: error?.message,
       stack: error?.stack,
       error
@@ -334,7 +334,7 @@ export async function POST(req: NextRequest) {
         ok: false, 
         error: 'Internal error',
         detail: error?.message || 'Unexpected server error',
-        requestId
+        debugId
       },
       { status: 500 }
     )
