@@ -18,7 +18,7 @@ export function WhyNow() {
               The world feels louder than it used to. Things move fast. People are anxious. As a creator, you feel the pressure to keep up, even when you don&apos;t know what you&apos;re chasing. The result is a quiet kind of confusion where you&apos;re making content but you&apos;re losing clarity and direction.
             </p>
             <p>
-              Creator Playbook exists for this moment.
+              <strong>Creator Playbook exists for this moment.</strong>
             </p>
             <p>
               A monthly check-in on your creator journey that helps you slow down, pay attention to what&apos;s happening around you, test simple strategies, and turn all the noise into one clear action you can take before the next chapter.

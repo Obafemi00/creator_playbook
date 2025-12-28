@@ -177,7 +177,7 @@ export function ThisMonth() {
               }}
             >
               <p className="text-lg md:text-xl text-charcoal/80 dark:text-[var(--text)]/80 leading-relaxed font-sans">
-                One sentence describing the idea.
+                You're a unique individual, let your content reflect that.
               </p>
             </motion.div>
 

@@ -90,7 +90,7 @@ export function AboutMe() {
                 This is the result of a ten year journey, starting in 2015.
               </p>
               <p>
-                The first 3 years were tech, driven by pure curiosity. I got hooked on the idea that you can give a computer instructions and it will execute them right in front of you. That obsession turned into building small games and apps, then real projects and early products, launching things while still in uni.
+                The first 5 years were tech, driven by pure curiosity. I got hooked on the idea that you can give a computer instructions and it will execute them right in front of you. That obsession turned into building small games and apps, then real projects and early products, launching things while still in uni.
               </p>
 
               {/* Read more button */}
@@ -118,10 +118,10 @@ export function AboutMe() {
                   >
                     <div className="space-y-6 pt-2">
                       <p>
-                        The next 7 years were about creating. I followed that same curiosity into design, art, motion, and 3D, learning what makes us stand out, and how to make things people actually feel. That was my introduction to storytelling.
+                        The next 5 years were about creating. I followed that same curiosity into design, art, motion, and 3D, learning what makes us stand out, and how to make things people actually feel. That was my introduction to storytelling.
                       </p>
                       <p>
-                        3 years of tech and 7 years of art. That order matters. Here&apos;s why:
+                        5 years of tech and 5 years of art. That order matters. Here&apos;s why:
                       </p>
                       <p>
                         Someone who spent their ten years in tech sees this new era through the lens of systems. Someone who spent ten years as a creator sees it through craft and culture. I&apos;ve lived both worlds long enough to see the overlap, and the gap creators are standing in right now.
