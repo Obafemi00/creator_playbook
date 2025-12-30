@@ -1,9 +1,9 @@
 'use client'
 
 import { useState, useRef } from 'react'
-import Image from 'next/image'
 import { motion, AnimatePresence, useInView, useReducedMotion } from 'framer-motion'
 import { FadeIn } from '@/components/motion'
+import { SquareImage } from '@/components/ui/SquareImage'
 
 export function AboutMe() {
   const [isExpanded, setIsExpanded] = useState(false)
@@ -158,21 +158,13 @@ export function AboutMe() {
                 aria-hidden="true"
               />
 
-              {/* Image Container */}
-              <div className="relative rounded-3xl overflow-hidden border border-white/10 dark:border-white/10 shadow-2xl shadow-black/20 dark:shadow-black/40">
-                {/* Optional: Subtle gradient overlay for blending */}
-                <div className="absolute inset-0 bg-gradient-to-t from-black/5 to-transparent pointer-events-none z-10" aria-hidden="true" />
-                
-                <Image
-                  src="/images/sav.jpg"
-                  alt="Sav"
-                  width={800}
-                  height={1000}
-                  className="object-cover w-full h-auto"
-                  priority={false}
-                  sizes="(max-width: 1024px) 100vw, 42vw"
-                />
-              </div>
+              {/* Square Image */}
+              <SquareImage
+                src="/images/sav.jpg"
+                alt="Sav"
+                size="large"
+                priority={false}
+              />
 
               {/* Subtle radial gradient accent in corner */}
               <div 

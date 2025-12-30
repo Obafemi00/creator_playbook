@@ -1,8 +1,8 @@
 'use client'
 
 import { useRef } from 'react'
-import Image from 'next/image'
 import { motion, useInView, useReducedMotion } from 'framer-motion'
+import { SquareImage } from '@/components/ui/SquareImage'
 
 export function MeetTheTeam() {
   const sectionRef = useRef<HTMLElement>(null)
@@ -164,20 +164,14 @@ export function MeetTheTeam() {
               
               {/* Image */}
               <motion.div
-                {...(!prefersReducedMotion && {
-                  whileHover: {
-                    scale: 1.02,
-                    transition: { duration: 0.3, ease: [0.4, 0, 0.2, 1] }
-                  }
-                })}
-                className="relative aspect-[4/5] rounded-2xl overflow-hidden shadow-lg hover:shadow-xl transition-shadow duration-300"
+                variants={imageRevealVariants}
+                initial="hidden"
+                animate={isInView ? 'visible' : 'hidden'}
               >
-                <Image
+                <SquareImage
                   src="/images/sav.jpg"
                   alt="Sav, Team Lead"
-                  fill
-                  className="object-cover object-center"
-                  sizes="(max-width: 768px) 100vw, 50vw"
+                  size="large"
                   priority
                 />
               </motion.div>
@@ -242,22 +236,30 @@ export function MeetTheTeam() {
                 style={{ transform: 'rotate(2deg)' }}
               />
               
-              {/* Image - tighter crop */}
+              {/* Image */}
               <motion.div
-                {...(!prefersReducedMotion && {
-                  whileHover: {
-                    scale: 1.02,
-                    transition: { duration: 0.3, ease: [0.4, 0, 0.2, 1] }
+                variants={{
+                  hidden: {
+                    opacity: 0,
+                    clipPath: prefersReducedMotion ? 'inset(0% 0% 0% 0%)' : 'inset(12% 0% 12% 0%)',
+                  },
+                  visible: {
+                    opacity: 1,
+                    clipPath: 'inset(0% 0% 0% 0%)',
+                    transition: {
+                      duration: 0.8,
+                      ease: [0.22, 1, 0.36, 1],
+                      delay: prefersReducedMotion ? 0 : 0.2,
+                    }
                   }
-                })}
-                className="relative aspect-[3/4] rounded-2xl overflow-hidden shadow-lg hover:shadow-xl transition-shadow duration-300"
+                }}
+                initial="hidden"
+                animate={isInView ? 'visible' : 'hidden'}
               >
-                <Image
+                <SquareImage
                   src="/images/femi.jpeg"
-                  alt="Herb Codes, Web Experience Curator"
-                  fill
-                  className="object-cover object-center"
-                  sizes="(max-width: 768px) 100vw, 50vw"
+                  alt="Herb Codes, Web Ninja"
+                  size="large"
                   priority
                 />
               </motion.div>
@@ -288,7 +290,7 @@ export function MeetTheTeam() {
               className="inline-block"
             >
               <span className="px-4 py-1.5 rounded-full text-sm font-sans font-medium bg-[var(--card)] dark:bg-[#1a1a20] text-[var(--muted)] border border-[var(--border)]">
-                Web Experience Curator
+                Web Ninja
               </span>
             </motion.div>
           </motion.div>
