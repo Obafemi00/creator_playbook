@@ -25,12 +25,6 @@ export default async function WelcomePage() {
         >
           Browse events
         </Link>
-        <Link
-          href="/playbook"
-          className="px-8 py-4 bg-transparent border-2 border-charcoal text-charcoal rounded-full font-semibold hover:bg-charcoal hover:text-offwhite transition-colors"
-        >
-          Explore playbook
-        </Link>
       </div>
     </div>
   )

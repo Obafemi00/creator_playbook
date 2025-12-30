@@ -51,8 +51,8 @@ export async function POST(req: NextRequest) {
         },
       ],
       customer_email: email,
-      success_url: `${process.env.NEXT_PUBLIC_SITE_URL || process.env.SITE_URL}/playbook?success=1&session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${process.env.NEXT_PUBLIC_SITE_URL || process.env.SITE_URL}/playbook?canceled=1`,
+      success_url: `${process.env.NEXT_PUBLIC_SITE_URL || process.env.SITE_URL}/events?success=1&session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${process.env.NEXT_PUBLIC_SITE_URL || process.env.SITE_URL}/events?canceled=1`,
       metadata: {
         playbook_month: playbookMonth,
         email,

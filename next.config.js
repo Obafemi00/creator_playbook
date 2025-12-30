@@ -11,6 +11,20 @@ const nextConfig = {
       },
     ],
   },
+  async redirects() {
+    return [
+      {
+        source: '/playbook',
+        destination: '/events',
+        permanent: true,
+      },
+      {
+        source: '/playbook/:path*',
+        destination: '/events',
+        permanent: true,
+      },
+    ]
+  },
   webpack: (config, { isServer }) => {
     // Externalize 'resend' to prevent webpack from trying to bundle it at build time
     // This allows the build to pass even if resend is not installed

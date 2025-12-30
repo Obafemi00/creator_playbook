@@ -102,15 +102,6 @@ export function MobileMenu({ isOpen, onClose, pathname }: MobileMenuProps) {
                   Events
                 </Link>
                 <Link
-                  href="/playbook"
-                  onClick={onClose}
-                  className={`text-base font-medium ${
-                    pathname === '/playbook' ? 'text-orange' : 'text-[var(--text)]/70'
-                  } hover:text-[var(--text)] transition-colors`}
-                >
-                  Playbook
-                </Link>
-                <Link
                   href="/#about"
                   onClick={onClose}
                   className="text-base font-medium text-[var(--text)]/70 hover:text-[var(--text)] transition-colors"

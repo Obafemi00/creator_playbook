@@ -44,14 +44,6 @@ export function Nav() {
               Events
             </Link>
             <Link
-              href="/playbook"
-              className={`text-sm hover:text-orange transition-colors ${
-                pathname === '/playbook' ? 'text-orange' : ''
-              }`}
-            >
-              Playbook
-            </Link>
-            <Link
               href="/pricing"
               className={`text-sm hover:text-orange transition-colors ${
                 pathname === '/pricing' ? 'text-orange' : ''

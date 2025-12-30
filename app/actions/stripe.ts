@@ -178,8 +178,8 @@ export async function createSupportCheckoutSession(amount: number, email?: strin
       },
     ],
     customer_email: customerEmail,
-    success_url: `${process.env.NEXT_PUBLIC_SITE_URL}/playbook?support_success=1&session_id={CHECKOUT_SESSION_ID}`,
-    cancel_url: `${process.env.NEXT_PUBLIC_SITE_URL}/playbook`,
+    success_url: `${process.env.NEXT_PUBLIC_SITE_URL}/events?support_success=1&session_id={CHECKOUT_SESSION_ID}`,
+    cancel_url: `${process.env.NEXT_PUBLIC_SITE_URL}/events`,
     metadata: {
       support_amount: amount.toString(),
       product: 'playbook',

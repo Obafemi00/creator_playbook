@@ -58,9 +58,6 @@ export function Navbar() {
               <NavLink href="/events" pathname={pathname}>
                 Events
               </NavLink>
-              <NavLink href="/playbook" pathname={pathname}>
-                Playbook
-              </NavLink>
               <NavLink href="/#about" pathname={pathname}>
                 About
               </NavLink>
