@@ -1,8 +1,8 @@
 'use client'
 
 import { useRef } from 'react'
+import Image from 'next/image'
 import { motion, useInView, useReducedMotion } from 'framer-motion'
-import { SquareImage } from '@/components/ui/SquareImage'
 
 export function MeetTheTeam() {
   const sectionRef = useRef<HTMLElement>(null)
@@ -167,11 +167,14 @@ export function MeetTheTeam() {
                 variants={imageRevealVariants}
                 initial="hidden"
                 animate={isInView ? 'visible' : 'hidden'}
+                className="relative aspect-[4/5] overflow-hidden shadow-lg"
               >
-                <SquareImage
+                <Image
                   src="/images/sav.jpg"
                   alt="Sav, Team Lead"
-                  size="large"
+                  fill
+                  className="object-cover object-center"
+                  sizes="(max-width: 768px) 100vw, 50vw"
                   priority
                 />
               </motion.div>
@@ -255,11 +258,14 @@ export function MeetTheTeam() {
                 }}
                 initial="hidden"
                 animate={isInView ? 'visible' : 'hidden'}
+                className="relative aspect-[3/4] overflow-hidden shadow-lg"
               >
-                <SquareImage
+                <Image
                   src="/images/femi.jpeg"
                   alt="Herb Codes, Web Ninja"
-                  size="large"
+                  fill
+                  className="object-cover object-center"
+                  sizes="(max-width: 768px) 100vw, 50vw"
                   priority
                 />
               </motion.div>
