@@ -158,7 +158,7 @@ export function MeetTheTeam() {
             animate={isInView ? 'visible' : 'hidden'}
             className="text-lg md:text-xl text-[var(--muted)] leading-relaxed max-w-2xl"
           >
-            Two creators building tools that help you think clearer and move faster.
+            Creators just like you building tools that help you think clearly and create{'\u00A0'}faster.
           </motion.p>
         </div>
 
