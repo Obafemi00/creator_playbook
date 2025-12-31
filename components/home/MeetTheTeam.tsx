@@ -53,18 +53,35 @@ export function MeetTheTeam() {
     }
   }
 
-  // Image reveal animation using clip-path
+  // Image reveal animation - fade + slight upward motion
   const imageRevealVariants = {
     hidden: {
       opacity: 0,
-      clipPath: prefersReducedMotion ? 'inset(0% 0% 0% 0%)' : 'inset(12% 0% 12% 0%)',
+      y: prefersReducedMotion ? 0 : 15,
     },
     visible: {
       opacity: 1,
-      clipPath: 'inset(0% 0% 0% 0%)',
+      y: 0,
       transition: {
-        duration: 0.8,
+        duration: 0.7,
         ease: [0.22, 1, 0.36, 1],
+      }
+    }
+  }
+
+  // Text fade-in with delay
+  const textVariants = {
+    hidden: {
+      opacity: 0,
+      y: prefersReducedMotion ? 0 : 8,
+    },
+    visible: {
+      opacity: 1,
+      y: 0,
+      transition: {
+        duration: 0.6,
+        ease: [0.22, 1, 0.36, 1],
+        delay: prefersReducedMotion ? 0 : 0.12,
       }
     }
   }
@@ -145,161 +162,133 @@ export function MeetTheTeam() {
           </motion.p>
         </div>
 
-        {/* Gallery Layout - Desktop: Asymmetric, Mobile: Stacked */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 md:gap-12 lg:gap-16 items-start">
-          {/* Sav - Dominant (larger) */}
-          <motion.div
-            initial="hidden"
-            animate={isInView ? 'visible' : 'hidden'}
-            variants={imageRevealVariants}
-            className="relative group"
-          >
-            {/* Image container with overlap effect */}
-            <div className="relative mb-6">
-              {/* Soft shape field behind image */}
-              <div 
-                className="absolute -bottom-4 -right-4 w-full h-full bg-[var(--card)] dark:bg-[#1a1a20] rounded-2xl opacity-60 dark:opacity-40 -z-10"
-                style={{ transform: 'rotate(-2deg)' }}
-              />
-              
-              {/* Image */}
+        {/* Team Members - Alternating 2-column layout */}
+        <div className="space-y-16 md:space-y-24">
+          {/* Sav - Image left, Text right */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 items-center">
+            {/* Image Column */}
+            <motion.div
+              variants={imageRevealVariants}
+              initial="hidden"
+              animate={isInView ? 'visible' : 'hidden'}
+              className="relative group flex justify-center lg:justify-start"
+            >
               <motion.div
-                variants={imageRevealVariants}
-                initial="hidden"
-                animate={isInView ? 'visible' : 'hidden'}
-                className="relative aspect-[4/5] overflow-hidden shadow-lg"
+                className="relative aspect-square w-[280px] sm:w-[320px] md:w-[400px] lg:w-[480px] overflow-hidden rounded-3xl border border-[var(--border)] dark:border-white/10 shadow-[0_18px_45px_rgba(0,0,0,0.18)]"
+                whileHover={prefersReducedMotion ? {} : { scale: 1.03 }}
+                transition={{ duration: 0.3, ease: 'easeOut' }}
               >
                 <Image
                   src="/images/sav.jpg"
                   alt="Sav, Team Lead"
                   fill
                   className="object-cover object-center"
-                  sizes="(max-width: 768px) 100vw, 50vw"
+                  sizes="(max-width: 640px) 280px, (max-width: 768px) 320px, (max-width: 1024px) 400px, 480px"
                   priority
                 />
               </motion.div>
-            </div>
+            </motion.div>
 
-            {/* Name with animated underline on hover */}
-            <div className="relative">
-              <motion.h3
-                className="font-display text-2xl md:text-3xl font-bold mb-2 text-[var(--text)] inline-block"
-              >
-                Sav
-                {!prefersReducedMotion && (
-                  <motion.span
-                    className="absolute bottom-0 left-0 h-0.5 bg-[var(--brand-orange)]"
-                    initial={{ width: 0 }}
-                    whileHover={{ width: '100%' }}
-                    transition={{ duration: 0.25, ease: 'easeOut' }}
-                  />
-                )}
-              </motion.h3>
-            </div>
-
-            {/* Role badge */}
+            {/* Text Column */}
             <motion.div
-              variants={badgeVariants}
+              variants={textVariants}
               initial="hidden"
               animate={isInView ? 'visible' : 'hidden'}
-              className="inline-block"
+              className="flex flex-col items-center lg:items-start text-center lg:text-left"
             >
-              <span className="px-4 py-1.5 rounded-full text-sm font-sans font-medium bg-[var(--card)] dark:bg-[#1a1a20] text-[var(--muted)] border border-[var(--border)]">
-                Team Lead
-              </span>
-            </motion.div>
-          </motion.div>
+              {/* Name with animated underline on hover */}
+              <div className="relative mb-3">
+                <motion.h3
+                  className="font-display text-3xl md:text-4xl lg:text-5xl font-bold text-[var(--text)] inline-block"
+                >
+                  Sav
+                  {!prefersReducedMotion && (
+                    <motion.span
+                      className="absolute bottom-0 left-0 h-0.5 bg-[var(--brand-orange)]"
+                      initial={{ width: 0 }}
+                      whileHover={{ width: '100%' }}
+                      transition={{ duration: 0.25, ease: 'easeOut' }}
+                    />
+                  )}
+                </motion.h3>
+              </div>
 
-          {/* Herb Codes - Offset (smaller, tighter crop) */}
-          <motion.div
-            initial="hidden"
-            animate={isInView ? 'visible' : 'hidden'}
-            variants={{
-              hidden: {
-                opacity: 0,
-                clipPath: prefersReducedMotion ? 'inset(0% 0% 0% 0%)' : 'inset(12% 0% 12% 0%)',
-              },
-              visible: {
-                opacity: 1,
-                clipPath: 'inset(0% 0% 0% 0%)',
-                transition: {
-                  duration: 0.8,
-                  ease: [0.22, 1, 0.36, 1],
-                  delay: prefersReducedMotion ? 0 : 0.2,
-                }
-              }
-            }}
-            className="relative group lg:mt-16"
-          >
-            {/* Image container */}
-            <div className="relative mb-6">
-              {/* Soft shape field behind image - offset */}
-              <div 
-                className="absolute -top-4 -left-4 w-full h-full bg-[var(--card)] dark:bg-[#1a1a20] rounded-2xl opacity-60 dark:opacity-40 -z-10"
-                style={{ transform: 'rotate(2deg)' }}
-              />
-              
-              {/* Image */}
+              {/* Role badge */}
               <motion.div
-                variants={{
-                  hidden: {
-                    opacity: 0,
-                    clipPath: prefersReducedMotion ? 'inset(0% 0% 0% 0%)' : 'inset(12% 0% 12% 0%)',
-                  },
-                  visible: {
-                    opacity: 1,
-                    clipPath: 'inset(0% 0% 0% 0%)',
-                    transition: {
-                      duration: 0.8,
-                      ease: [0.22, 1, 0.36, 1],
-                      delay: prefersReducedMotion ? 0 : 0.2,
-                    }
-                  }
-                }}
+                variants={badgeVariants}
                 initial="hidden"
                 animate={isInView ? 'visible' : 'hidden'}
-                className="relative aspect-[3/4] overflow-hidden shadow-lg"
+                className="mt-2 shrink-0"
+              >
+                <span className="inline-flex items-center justify-center whitespace-nowrap h-7 px-3 text-xs font-medium tracking-wide rounded-full border border-[var(--border)] bg-[var(--card)]/50 dark:bg-white/5 text-[var(--muted)] dark:text-white/80 backdrop-blur">
+                  Team Lead
+                </span>
+              </motion.div>
+            </motion.div>
+          </div>
+
+          {/* Herb Codes - Image right, Text left */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 items-center">
+            {/* Text Column */}
+            <motion.div
+              variants={textVariants}
+              initial="hidden"
+              animate={isInView ? 'visible' : 'hidden'}
+              className="flex flex-col items-center lg:items-end text-center lg:text-right order-2 lg:order-1"
+            >
+              {/* Name with animated underline on hover */}
+              <div className="relative mb-3">
+                <motion.h3
+                  className="font-display text-3xl md:text-4xl lg:text-5xl font-bold text-[var(--text)] inline-block"
+                >
+                  Herb Codes
+                  {!prefersReducedMotion && (
+                    <motion.span
+                      className="absolute bottom-0 right-0 h-0.5 bg-[var(--brand-orange)]"
+                      initial={{ width: 0 }}
+                      whileHover={{ width: '100%' }}
+                      transition={{ duration: 0.25, ease: 'easeOut' }}
+                    />
+                  )}
+                </motion.h3>
+              </div>
+
+              {/* Role badge */}
+              <motion.div
+                variants={badgeVariants}
+                initial="hidden"
+                animate={isInView ? 'visible' : 'hidden'}
+                className="mt-2 shrink-0"
+              >
+                <span className="inline-flex items-center justify-center whitespace-nowrap h-7 px-3 text-xs font-medium tracking-wide rounded-full border border-[var(--border)] bg-[var(--card)]/50 dark:bg-white/5 text-[var(--muted)] dark:text-white/80 backdrop-blur">
+                  Web Ninja
+                </span>
+              </motion.div>
+            </motion.div>
+
+            {/* Image Column */}
+            <motion.div
+              variants={imageRevealVariants}
+              initial="hidden"
+              animate={isInView ? 'visible' : 'hidden'}
+              className="relative group flex justify-center lg:justify-end order-1 lg:order-2"
+            >
+              <motion.div
+                className="relative aspect-square w-[280px] sm:w-[320px] md:w-[400px] lg:w-[480px] overflow-hidden rounded-3xl border border-[var(--border)] dark:border-white/10 shadow-[0_18px_45px_rgba(0,0,0,0.18)]"
+                whileHover={prefersReducedMotion ? {} : { scale: 1.03 }}
+                transition={{ duration: 0.3, ease: 'easeOut' }}
               >
                 <Image
                   src="/images/femi.jpeg"
                   alt="Herb Codes, Web Ninja"
                   fill
                   className="object-cover object-center"
-                  sizes="(max-width: 768px) 100vw, 50vw"
+                  sizes="(max-width: 640px) 280px, (max-width: 768px) 320px, (max-width: 1024px) 400px, 480px"
                   priority
                 />
               </motion.div>
-            </div>
-
-            {/* Name with animated underline on hover */}
-            <div className="relative">
-              <motion.h3
-                className="font-display text-2xl md:text-3xl font-bold mb-2 text-[var(--text)] inline-block"
-              >
-                Herb Codes
-                {!prefersReducedMotion && (
-                  <motion.span
-                    className="absolute bottom-0 left-0 h-0.5 bg-[var(--brand-orange)]"
-                    initial={{ width: 0 }}
-                    whileHover={{ width: '100%' }}
-                    transition={{ duration: 0.25, ease: 'easeOut' }}
-                  />
-                )}
-              </motion.h3>
-            </div>
-
-            {/* Role badge */}
-            <motion.div
-              variants={badgeVariants}
-              initial="hidden"
-              animate={isInView ? 'visible' : 'hidden'}
-              className="inline-block"
-            >
-              <span className="px-4 py-1.5 rounded-full text-sm font-sans font-medium bg-[var(--card)] dark:bg-[#1a1a20] text-[var(--muted)] border border-[var(--border)]">
-                Web Ninja
-              </span>
             </motion.div>
-          </motion.div>
+          </div>
         </div>
       </div>
     </section>

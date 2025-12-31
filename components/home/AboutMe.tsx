@@ -159,13 +159,12 @@ export function AboutMe() {
               />
 
               {/* Image Container */}
-              <div className="relative overflow-hidden shadow-2xl shadow-black/20 dark:shadow-black/40">
+              <div className="relative aspect-square overflow-hidden rounded-3xl shadow-2xl shadow-black/20 dark:shadow-black/40">
                 <Image
                   src="/images/sav.jpg"
                   alt="Sav"
-                  width={800}
-                  height={1000}
-                  className="object-cover w-full h-auto"
+                  fill
+                  className="object-cover object-center"
                   priority={false}
                   sizes="(max-width: 1024px) 100vw, 42vw"
                 />
