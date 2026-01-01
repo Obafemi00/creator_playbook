@@ -1,11 +1,10 @@
 'use client'
 
 import { motion, useScroll, useTransform, useInView, useReducedMotion } from 'framer-motion'
-import { useRef, useState } from 'react'
+import { useRef } from 'react'
 import { Button } from '@/components/Button'
 
-// TODO: Replace with actual YouTube video ID when available
-const THIS_MONTH_YT_URL = "https://www.youtube.com/embed/VIDEO_ID"
+const THIS_MONTH_YT_URL = "https://www.youtube.com/embed/SidmqQERJHM"
 
 const bullets = [
   'Creating intentionally in a world of chaos.',
@@ -87,8 +86,6 @@ function BulletItem({
 
 export function ThisMonth() {
   const sectionRef = useRef<HTMLElement>(null)
-  const videoRef = useRef<HTMLDivElement>(null)
-  const [isHoveringVideo, setIsHoveringVideo] = useState(false)
   const prefersReducedMotion = useReducedMotion()
   
   // Intersection Observer for section enter animations
@@ -192,9 +189,8 @@ export function ThisMonth() {
 
           {/* Right Column: Video and CTA */}
           <div className="space-y-6">
-            {/* Video card with ambient glow and breathing play icon */}
+            {/* Video card with ambient glow */}
             <motion.div
-              ref={videoRef}
               initial={{ opacity: 0, scale: 0.98 }}
               animate={isInView ? { opacity: 1, scale: 1 } : { opacity: 0, scale: 0.98 }}
               transition={{
@@ -202,8 +198,6 @@ export function ThisMonth() {
                 delay: prefersReducedMotion ? 0 : 0.3,
                 ease: [0.4, 0, 0.2, 1],
               }}
-              onMouseEnter={() => setIsHoveringVideo(true)}
-              onMouseLeave={() => setIsHoveringVideo(false)}
               className="relative"
             >
               {/* Ambient glow background */}
@@ -228,42 +222,15 @@ export function ThisMonth() {
               {/* Video container */}
               <div 
                 id="this-month-video" 
-                className="aspect-video rounded-2xl overflow-hidden bg-charcoal/5 dark:bg-[var(--card)]/50 relative group"
+                className="aspect-video rounded-2xl overflow-hidden bg-charcoal/5 dark:bg-[var(--card)]/50 relative"
               >
                 <iframe
                   src={THIS_MONTH_YT_URL}
                   title="This month - Chapter 1 | INTENTION"
                   allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                   allowFullScreen
-                  className="w-full h-full relative z-10"
+                  className="w-full h-full"
                 />
-                
-                {/* YouTube play button overlay - decorative breathing animation */}
-                <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-20">
-                  <motion.div
-                    className="w-20 h-20 rounded-full bg-red-600/90 flex items-center justify-center shadow-lg pointer-events-none"
-                    animate={
-                      !isHoveringVideo && !prefersReducedMotion
-                        ? {
-                            scale: [1, 1.05, 1],
-                          }
-                        : { scale: isHoveringVideo ? 1.06 : 1 }
-                    }
-                    transition={{
-                      duration: prefersReducedMotion ? 0 : 2.5,
-                      repeat: prefersReducedMotion ? 0 : Infinity,
-                      ease: 'easeInOut',
-                    }}
-                  >
-                    <svg
-                      className="w-10 h-10 text-white ml-1"
-                      fill="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path d="M8 5v14l11-7z" />
-                    </svg>
-                  </motion.div>
-                </div>
               </div>
             </motion.div>
 

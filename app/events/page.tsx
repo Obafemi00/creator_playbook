@@ -35,6 +35,19 @@ export default async function EventsPage() {
             <p className="text-center text-charcoal/50 dark:text-[#7E8599] py-20">No events yet. Check back soon.</p>
           )}
 
+          {/* YouTube Video */}
+          <div className="my-16">
+            <div className="aspect-video rounded-2xl overflow-hidden bg-charcoal/5 dark:bg-[var(--card)]/50">
+              <iframe
+                src="https://www.youtube.com/embed/SidmqQERJHM"
+                title="Creator Playbook - Volume 1"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                allowFullScreen
+                className="w-full h-full"
+              />
+            </div>
+          </div>
+
           {/* Event Registration Form */}
           <EventRegistrationForm />
         </FadeIn>
