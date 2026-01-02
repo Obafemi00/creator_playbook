@@ -255,7 +255,7 @@ export function ThisMonth() {
                   className="relative group [&:hover]:shadow-xl"
                 >
                   <span className="flex items-center gap-2">
-                    Watch the event
+                    Join the community
                     <motion.svg
                       className="w-4 h-4"
                       fill="none"

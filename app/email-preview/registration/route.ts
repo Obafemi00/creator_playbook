@@ -20,7 +20,7 @@ export async function GET() {
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="x-apple-disable-message-reformatting">
-  <title>You're in. Welcome to Creative Playbook</title>
+  <title>You're in. Welcome to Creator Playbook</title>
   <!--[if mso]>
   <style type="text/css">
     body, table, td {font-family: Arial, sans-serif !important;}
@@ -58,7 +58,7 @@ export async function GET() {
               </p>
               
               <p style="margin: 0 0 20px; font-size: 16px; line-height: 1.6; color: #2B2B2B;">
-                Each month, we'll send you the Creative Playbook: a new playbook + video to help you think clearer and move faster.
+                Each month, we'll send you the Creator Playbook: a new playbook + video to help you think clearer and move faster.
               </p>
               
               <p style="margin: 0 0 32px; font-size: 16px; line-height: 1.6; color: #6B6B6B;">
