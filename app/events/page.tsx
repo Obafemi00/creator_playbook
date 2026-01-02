@@ -25,14 +25,12 @@ export default async function EventsPage() {
             </p>
           </div>
 
-          {volumes && volumes.length > 0 ? (
+          {volumes && volumes.length > 0 && (
             <div className="space-y-8">
               {volumes.map((volume) => (
                 <VolumeCard key={volume.id} volume={volume} />
               ))}
             </div>
-          ) : (
-            <p className="text-center text-charcoal/50 dark:text-[#7E8599] py-20">No events yet. Check back soon.</p>
           )}
 
           {/* YouTube Video */}
