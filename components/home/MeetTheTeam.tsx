@@ -162,44 +162,39 @@ export function MeetTheTeam() {
           </motion.p>
         </div>
 
-        {/* Team Members - Alternating 2-column layout */}
-        <div className="space-y-16 md:space-y-24">
-          {/* Sav - Image left, Text right */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 items-center">
-            {/* Image Column */}
+        {/* Team Members - Single row layout */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-8 md:gap-10 lg:gap-12">
+          {/* Sav */}
+          <motion.div
+            variants={imageRevealVariants}
+            initial="hidden"
+            animate={isInView ? 'visible' : 'hidden'}
+            className="group"
+          >
             <motion.div
-              variants={imageRevealVariants}
-              initial="hidden"
-              animate={isInView ? 'visible' : 'hidden'}
-              className="relative group flex justify-center lg:justify-start"
+              className="relative aspect-square w-full overflow-hidden rounded-3xl border border-[var(--border)] dark:border-white/10 shadow-[0_18px_45px_rgba(0,0,0,0.18)] mb-6"
+              whileHover={prefersReducedMotion ? {} : { scale: 1.02, boxShadow: '0_24px_60px_rgba(0,0,0,0.25)' }}
+              transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
             >
-              <motion.div
-                className="relative aspect-square w-[280px] sm:w-[320px] md:w-[400px] lg:w-[480px] overflow-hidden rounded-3xl border border-[var(--border)] dark:border-white/10 shadow-[0_18px_45px_rgba(0,0,0,0.18)]"
-                whileHover={prefersReducedMotion ? {} : { scale: 1.03 }}
-                transition={{ duration: 0.3, ease: 'easeOut' }}
-              >
-                <Image
-                  src="/images/sav.jpg"
-                  alt="Sav, Team Lead"
-                  fill
-                  className="object-cover object-center"
-                  sizes="(max-width: 640px) 280px, (max-width: 768px) 320px, (max-width: 1024px) 400px, 480px"
-                  priority
-                />
-              </motion.div>
+              <Image
+                src="/images/sav.jpg"
+                alt="Sav, Team Lead"
+                fill
+                className="object-cover object-center"
+                sizes="(max-width: 768px) 50vw, 25vw"
+                priority
+              />
             </motion.div>
-
-            {/* Text Column */}
+            
             <motion.div
               variants={textVariants}
               initial="hidden"
               animate={isInView ? 'visible' : 'hidden'}
-              className="flex flex-col items-center lg:items-start text-center lg:text-left"
+              className="text-center"
             >
-              {/* Name with animated underline on hover */}
-              <div className="relative mb-3">
+              <div className="relative mb-3 inline-block">
                 <motion.h3
-                  className="font-display text-3xl md:text-4xl lg:text-5xl font-bold text-[var(--text)] inline-block"
+                  className="font-display text-xl md:text-2xl lg:text-3xl font-bold text-[var(--text)] inline-block"
                 >
                   Sav
                   {!prefersReducedMotion && (
@@ -212,8 +207,7 @@ export function MeetTheTeam() {
                   )}
                 </motion.h3>
               </div>
-
-              {/* Role badge */}
+              
               <motion.div
                 variants={badgeVariants}
                 initial="hidden"
@@ -225,26 +219,46 @@ export function MeetTheTeam() {
                 </span>
               </motion.div>
             </motion.div>
-          </div>
+          </motion.div>
 
-          {/* Herb Codes - Image right, Text left */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 items-center">
-            {/* Text Column */}
+          {/* Herb Codes */}
+          <motion.div
+            variants={imageRevealVariants}
+            initial="hidden"
+            animate={isInView ? 'visible' : 'hidden'}
+            transition={{ delay: prefersReducedMotion ? 0 : 0.1 }}
+            className="group"
+          >
+            <motion.div
+              className="relative aspect-square w-full overflow-hidden rounded-3xl border border-[var(--border)] dark:border-white/10 shadow-[0_18px_45px_rgba(0,0,0,0.18)] mb-6"
+              whileHover={prefersReducedMotion ? {} : { scale: 1.02, boxShadow: '0_24px_60px_rgba(0,0,0,0.25)' }}
+              transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
+            >
+              <Image
+                src="/images/femi.jpeg"
+                alt="Herb Codes, Web Ninja"
+                fill
+                className="object-cover object-center"
+                sizes="(max-width: 768px) 50vw, 25vw"
+                priority
+              />
+            </motion.div>
+            
             <motion.div
               variants={textVariants}
               initial="hidden"
               animate={isInView ? 'visible' : 'hidden'}
-              className="flex flex-col items-center lg:items-end text-center lg:text-right order-2 lg:order-1"
+              transition={{ delay: prefersReducedMotion ? 0 : 0.22 }}
+              className="text-center"
             >
-              {/* Name with animated underline on hover */}
-              <div className="relative mb-3">
+              <div className="relative mb-3 inline-block">
                 <motion.h3
-                  className="font-display text-3xl md:text-4xl lg:text-5xl font-bold text-[var(--text)] inline-block"
+                  className="font-display text-xl md:text-2xl lg:text-3xl font-bold text-[var(--text)] inline-block"
                 >
                   Herb Codes
                   {!prefersReducedMotion && (
                     <motion.span
-                      className="absolute bottom-0 right-0 h-0.5 bg-[var(--brand-orange)]"
+                      className="absolute bottom-0 left-0 h-0.5 bg-[var(--brand-orange)]"
                       initial={{ width: 0 }}
                       whileHover={{ width: '100%' }}
                       transition={{ duration: 0.25, ease: 'easeOut' }}
@@ -252,12 +266,12 @@ export function MeetTheTeam() {
                   )}
                 </motion.h3>
               </div>
-
-              {/* Role badge */}
+              
               <motion.div
                 variants={badgeVariants}
                 initial="hidden"
                 animate={isInView ? 'visible' : 'hidden'}
+                transition={{ delay: prefersReducedMotion ? 0 : 0.5 }}
                 className="mt-2 shrink-0"
               >
                 <span className="inline-flex items-center justify-center whitespace-nowrap h-7 px-3 text-xs font-medium tracking-wide rounded-full border border-[var(--border)] bg-[var(--card)]/50 dark:bg-white/5 text-[var(--muted)] dark:text-white/80 backdrop-blur">
@@ -265,30 +279,125 @@ export function MeetTheTeam() {
                 </span>
               </motion.div>
             </motion.div>
+          </motion.div>
 
-            {/* Image Column */}
+          {/* Favour */}
+          <motion.div
+            variants={imageRevealVariants}
+            initial="hidden"
+            animate={isInView ? 'visible' : 'hidden'}
+            transition={{ delay: prefersReducedMotion ? 0 : 0.2 }}
+            className="group"
+          >
             <motion.div
-              variants={imageRevealVariants}
+              className="relative aspect-square w-full overflow-hidden rounded-3xl border border-[var(--border)] dark:border-white/10 shadow-[0_18px_45px_rgba(0,0,0,0.18)] mb-6"
+              whileHover={prefersReducedMotion ? {} : { scale: 1.02, boxShadow: '0_24px_60px_rgba(0,0,0,0.25)' }}
+              transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
+            >
+              <Image
+                src="/images/favour.jpeg"
+                alt="Favour, Quality Control"
+                fill
+                className="object-cover object-center"
+                sizes="(max-width: 768px) 50vw, 25vw"
+              />
+            </motion.div>
+            
+            <motion.div
+              variants={textVariants}
               initial="hidden"
               animate={isInView ? 'visible' : 'hidden'}
-              className="relative group flex justify-center lg:justify-end order-1 lg:order-2"
+              transition={{ delay: prefersReducedMotion ? 0 : 0.32 }}
+              className="text-center"
             >
+              <div className="relative mb-3 inline-block">
+                <motion.h3
+                  className="font-display text-xl md:text-2xl lg:text-3xl font-bold text-[var(--text)] inline-block"
+                >
+                  Favour
+                  {!prefersReducedMotion && (
+                    <motion.span
+                      className="absolute bottom-0 left-0 h-0.5 bg-[var(--brand-orange)]"
+                      initial={{ width: 0 }}
+                      whileHover={{ width: '100%' }}
+                      transition={{ duration: 0.25, ease: 'easeOut' }}
+                    />
+                  )}
+                </motion.h3>
+              </div>
+              
               <motion.div
-                className="relative aspect-square w-[280px] sm:w-[320px] md:w-[400px] lg:w-[480px] overflow-hidden rounded-3xl border border-[var(--border)] dark:border-white/10 shadow-[0_18px_45px_rgba(0,0,0,0.18)]"
-                whileHover={prefersReducedMotion ? {} : { scale: 1.03 }}
-                transition={{ duration: 0.3, ease: 'easeOut' }}
+                variants={badgeVariants}
+                initial="hidden"
+                animate={isInView ? 'visible' : 'hidden'}
+                transition={{ delay: prefersReducedMotion ? 0 : 0.6 }}
+                className="mt-2 shrink-0"
               >
-                <Image
-                  src="/images/femi.jpeg"
-                  alt="Herb Codes, Web Ninja"
-                  fill
-                  className="object-cover object-center"
-                  sizes="(max-width: 640px) 280px, (max-width: 768px) 320px, (max-width: 1024px) 400px, 480px"
-                  priority
-                />
+                <span className="inline-flex items-center justify-center whitespace-nowrap h-7 px-3 text-xs font-medium tracking-wide rounded-full border border-[var(--border)] bg-[var(--card)]/50 dark:bg-white/5 text-[var(--muted)] dark:text-white/80 backdrop-blur">
+                  Quality Control
+                </span>
               </motion.div>
             </motion.div>
-          </div>
+          </motion.div>
+
+          {/* Odee */}
+          <motion.div
+            variants={imageRevealVariants}
+            initial="hidden"
+            animate={isInView ? 'visible' : 'hidden'}
+            transition={{ delay: prefersReducedMotion ? 0 : 0.3 }}
+            className="group"
+          >
+            <motion.div
+              className="relative aspect-square w-full overflow-hidden rounded-3xl border border-[var(--border)] dark:border-white/10 shadow-[0_18px_45px_rgba(0,0,0,0.18)] mb-6"
+              whileHover={prefersReducedMotion ? {} : { scale: 1.02, boxShadow: '0_24px_60px_rgba(0,0,0,0.25)' }}
+              transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
+            >
+              <Image
+                src="/images/odee.jpeg"
+                alt="Odee, Content Curator"
+                fill
+                className="object-cover object-center"
+                sizes="(max-width: 768px) 50vw, 25vw"
+              />
+            </motion.div>
+            
+            <motion.div
+              variants={textVariants}
+              initial="hidden"
+              animate={isInView ? 'visible' : 'hidden'}
+              transition={{ delay: prefersReducedMotion ? 0 : 0.42 }}
+              className="text-center"
+            >
+              <div className="relative mb-3 inline-block">
+                <motion.h3
+                  className="font-display text-xl md:text-2xl lg:text-3xl font-bold text-[var(--text)] inline-block"
+                >
+                  Odee
+                  {!prefersReducedMotion && (
+                    <motion.span
+                      className="absolute bottom-0 left-0 h-0.5 bg-[var(--brand-orange)]"
+                      initial={{ width: 0 }}
+                      whileHover={{ width: '100%' }}
+                      transition={{ duration: 0.25, ease: 'easeOut' }}
+                    />
+                  )}
+                </motion.h3>
+              </div>
+              
+              <motion.div
+                variants={badgeVariants}
+                initial="hidden"
+                animate={isInView ? 'visible' : 'hidden'}
+                transition={{ delay: prefersReducedMotion ? 0 : 0.7 }}
+                className="mt-2 shrink-0"
+              >
+                <span className="inline-flex items-center justify-center whitespace-nowrap h-7 px-3 text-xs font-medium tracking-wide rounded-full border border-[var(--border)] bg-[var(--card)]/50 dark:bg-white/5 text-[var(--muted)] dark:text-white/80 backdrop-blur">
+                  Content Curator
+                </span>
+              </motion.div>
+            </motion.div>
+          </motion.div>
         </div>
       </div>
     </section>
