@@ -162,7 +162,8 @@ export async function POST(req: NextRequest) {
           country: normalizedCountry,
           email: normalizedEmail,
           event_slug: normalizedEventSlug,
-          source: 'website', // Track where registration came from
+          // Note: source field removed - if column exists, it will use default value
+          // If column doesn't exist, this prevents insert failures
         })
         .select()
         .single()
@@ -195,7 +196,14 @@ export async function POST(req: NextRequest) {
         code: insertError.code,
         details: insertError.details,
         hint: insertError.hint,
-        error: insertError
+        error: insertError,
+        payload: {
+          first_name: normalizedFirstName,
+          last_name: normalizedLastName,
+          country: normalizedCountry,
+          email: normalizedEmail,
+          event_slug: normalizedEventSlug,
+        }
       })
 
       // Handle missing table/column errors
@@ -223,6 +231,22 @@ export async function POST(req: NextRequest) {
         )
       }
 
+      // Handle unique constraint violations (duplicate email for same event)
+      if (insertError.code === '23505') { // Unique violation
+        console.warn('[events/register] Duplicate registration detected', {
+          debugId,
+          email: normalizedEmail,
+          eventSlug: normalizedEventSlug
+        })
+        // Return success for duplicates (user already registered)
+        return NextResponse.json({
+          ok: true,
+          message: 'You are already registered for this event.',
+          id: null,
+          duplicate: true
+        })
+      }
+
       // Generic database error
       return NextResponse.json(
         { 
@@ -247,6 +271,14 @@ export async function POST(req: NextRequest) {
         { status: 500 }
       )
     }
+
+    // Log successful insert for debugging
+    console.log('[events/register] Registration inserted successfully', {
+      debugId,
+      registrationId: registration.id,
+      email: normalizedEmail,
+      eventSlug: normalizedEventSlug
+    })
 
     // Attempt to send emails (best-effort, non-blocking)
     let emailDeliveryStatus: 'sent' | 'skipped' | 'failed' = 'skipped'
