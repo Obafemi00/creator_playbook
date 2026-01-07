@@ -164,63 +164,6 @@ export function MeetTheTeam() {
 
         {/* Team Members - Single row layout */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-8 md:gap-10 lg:gap-12">
-          {/* Sav */}
-          <motion.div
-            variants={imageRevealVariants}
-            initial="hidden"
-            animate={isInView ? 'visible' : 'hidden'}
-            className="group"
-          >
-            <motion.div
-              className="relative aspect-square w-full overflow-hidden rounded-3xl border border-[var(--border)] dark:border-white/10 shadow-[0_18px_45px_rgba(0,0,0,0.18)] mb-6"
-              whileHover={prefersReducedMotion ? {} : { scale: 1.02, boxShadow: '0_24px_60px_rgba(0,0,0,0.25)' }}
-              transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
-            >
-              <Image
-                src="/images/sav.jpg"
-                alt="Sav, Team Lead"
-                fill
-                className="object-cover object-center"
-                sizes="(max-width: 768px) 50vw, 25vw"
-                priority
-              />
-            </motion.div>
-            
-            <motion.div
-              variants={textVariants}
-              initial="hidden"
-              animate={isInView ? 'visible' : 'hidden'}
-              className="text-center"
-            >
-              <div className="relative mb-3 inline-block">
-                <motion.h3
-                  className="font-display text-xl md:text-2xl lg:text-3xl font-bold text-[var(--text)] inline-block"
-                >
-                  Sav
-                  {!prefersReducedMotion && (
-                    <motion.span
-                      className="absolute bottom-0 left-0 h-0.5 bg-[var(--brand-orange)]"
-                      initial={{ width: 0 }}
-                      whileHover={{ width: '100%' }}
-                      transition={{ duration: 0.25, ease: 'easeOut' }}
-                    />
-                  )}
-                </motion.h3>
-              </div>
-              
-              <motion.div
-                variants={badgeVariants}
-                initial="hidden"
-                animate={isInView ? 'visible' : 'hidden'}
-                className="mt-2 shrink-0"
-              >
-                <span className="inline-flex items-center justify-center whitespace-nowrap h-7 px-3 text-xs font-medium tracking-wide rounded-full border border-[var(--border)] bg-[var(--card)]/50 dark:bg-white/5 text-[var(--muted)] dark:text-white/80 backdrop-blur">
-                  Team Lead
-                </span>
-              </motion.div>
-            </motion.div>
-          </motion.div>
-
           {/* Herb Codes */}
           <motion.div
             variants={imageRevealVariants}
@@ -394,6 +337,66 @@ export function MeetTheTeam() {
               >
                 <span className="inline-flex items-center justify-center whitespace-nowrap h-7 px-3 text-xs font-medium tracking-wide rounded-full border border-[var(--border)] bg-[var(--card)]/50 dark:bg-white/5 text-[var(--muted)] dark:text-white/80 backdrop-blur">
                   Content Curator
+                </span>
+              </motion.div>
+            </motion.div>
+          </motion.div>
+
+          {/* Sav */}
+          <motion.div
+            variants={imageRevealVariants}
+            initial="hidden"
+            animate={isInView ? 'visible' : 'hidden'}
+            transition={{ delay: prefersReducedMotion ? 0 : 0.4 }}
+            className="group"
+          >
+            <motion.div
+              className="relative aspect-square w-full overflow-hidden rounded-3xl border border-[var(--border)] dark:border-white/10 shadow-[0_18px_45px_rgba(0,0,0,0.18)] mb-6"
+              whileHover={prefersReducedMotion ? {} : { scale: 1.02, boxShadow: '0_24px_60px_rgba(0,0,0,0.25)' }}
+              transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
+            >
+              <Image
+                src="/images/sav.jpg"
+                alt="Sav, Team Lead"
+                fill
+                className="object-cover object-center"
+                sizes="(max-width: 768px) 50vw, 25vw"
+                priority
+              />
+            </motion.div>
+            
+            <motion.div
+              variants={textVariants}
+              initial="hidden"
+              animate={isInView ? 'visible' : 'hidden'}
+              transition={{ delay: prefersReducedMotion ? 0 : 0.52 }}
+              className="text-center"
+            >
+              <div className="relative mb-3 inline-block">
+                <motion.h3
+                  className="font-display text-xl md:text-2xl lg:text-3xl font-bold text-[var(--text)] inline-block"
+                >
+                  Sav
+                  {!prefersReducedMotion && (
+                    <motion.span
+                      className="absolute bottom-0 left-0 h-0.5 bg-[var(--brand-orange)]"
+                      initial={{ width: 0 }}
+                      whileHover={{ width: '100%' }}
+                      transition={{ duration: 0.25, ease: 'easeOut' }}
+                    />
+                  )}
+                </motion.h3>
+              </div>
+              
+              <motion.div
+                variants={badgeVariants}
+                initial="hidden"
+                animate={isInView ? 'visible' : 'hidden'}
+                transition={{ delay: prefersReducedMotion ? 0 : 0.8 }}
+                className="mt-2 shrink-0"
+              >
+                <span className="inline-flex items-center justify-center whitespace-nowrap h-7 px-3 text-xs font-medium tracking-wide rounded-full border border-[var(--border)] bg-[var(--card)]/50 dark:bg-white/5 text-[var(--muted)] dark:text-white/80 backdrop-blur">
+                  Team Lead
                 </span>
               </motion.div>
             </motion.div>
