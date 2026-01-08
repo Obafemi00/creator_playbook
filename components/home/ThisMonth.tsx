@@ -2,7 +2,6 @@
 
 import { motion, useScroll, useTransform, useInView, useReducedMotion } from 'framer-motion'
 import { useRef } from 'react'
-import { useRouter } from 'next/navigation'
 import { Button } from '@/components/Button'
 
 const THIS_MONTH_YT_URL = "https://www.youtube.com/embed/SidmqQERJHM"
@@ -87,7 +86,6 @@ function BulletItem({
 
 export function ThisMonth() {
   const sectionRef = useRef<HTMLElement>(null)
-  const router = useRouter()
   const prefersReducedMotion = useReducedMotion()
   
   // Intersection Observer for section enter animations
@@ -101,10 +99,6 @@ export function ThisMonth() {
     target: sectionRef,
     offset: ['start end', 'end start'],
   })
-
-  const handleJoinCommunity = () => {
-    router.push('/events')
-  }
 
   return (
     <section 
@@ -249,7 +243,7 @@ export function ThisMonth() {
                 className="inline-block"
               >
                 <Button 
-                  onClick={handleJoinCommunity} 
+                  href="/events"
                   variant="primary"
                   className="relative group [&:hover]:shadow-xl"
                 >
