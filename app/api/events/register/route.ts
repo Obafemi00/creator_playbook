@@ -280,77 +280,63 @@ export async function POST(req: NextRequest) {
       eventSlug: normalizedEventSlug
     })
 
-    // Attempt to send emails (best-effort, non-blocking)
-    let emailDeliveryStatus: 'sent' | 'skipped' | 'failed' = 'skipped'
-    let emailDeliveryReason: string | undefined
+    // Sync to Mailchimp (best-effort, non-blocking)
+    let mailchimpSyncStatus: 'synced' | 'skipped' | 'failed' = 'skipped'
+    let mailchimpSyncReason: string | undefined
 
     try {
-      const { sendRegistrationNotification, sendRegistrationConfirmation } = await import('@/lib/email')
-      
-      const timestamp = new Date().toLocaleString('en-US', {
-        dateStyle: 'long',
-        timeStyle: 'short',
-        timeZone: 'UTC',
-      })
+      const { syncToMailchimp } = await import('@/lib/mailchimp')
 
-      // Send notification email to sav@mycreatorplaybook.com
-      const notificationResult = await sendRegistrationNotification({
+      // Sync user to Mailchimp audience
+      const syncResult = await syncToMailchimp({
+        email: normalizedEmail,
         firstName: normalizedFirstName,
         lastName: normalizedLastName,
         country: normalizedCountry,
-        email: normalizedEmail,
-        eventSlug: normalizedEventSlug,
-        timestamp,
-      })
-
-      // Send confirmation email to registrant (optional, non-blocking)
-      const confirmationResult = await sendRegistrationConfirmation({
-        email: normalizedEmail,
-        firstName: normalizedFirstName,
         eventSlug: normalizedEventSlug,
       })
 
-      // Determine overall email status
-      if (notificationResult.ok && confirmationResult.ok) {
-        emailDeliveryStatus = 'sent'
-      } else if (notificationResult.skipped || confirmationResult.skipped) {
-        emailDeliveryStatus = 'skipped'
-        emailDeliveryReason = notificationResult.reason || confirmationResult.reason
+      if (syncResult.ok) {
+        mailchimpSyncStatus = 'synced'
+        console.log('[events/register] Mailchimp sync successful', {
+          debugId,
+          email: normalizedEmail,
+          memberId: syncResult.memberId
+        })
+      } else if (syncResult.skipped) {
+        mailchimpSyncStatus = 'skipped'
+        mailchimpSyncReason = syncResult.reason
+        console.warn('[events/register] Mailchimp sync skipped', {
+          debugId,
+          reason: syncResult.reason
+        })
       } else {
-        emailDeliveryStatus = 'failed'
-        emailDeliveryReason = notificationResult.reason || confirmationResult.reason
-      }
-
-      if (emailDeliveryStatus === 'skipped') {
-        console.warn('[events/register] Email sending skipped', {
+        mailchimpSyncStatus = 'failed'
+        mailchimpSyncReason = syncResult.reason
+        console.error('[events/register] Mailchimp sync failed', {
           debugId,
-          reason: emailDeliveryReason
-        })
-      } else if (emailDeliveryStatus === 'failed') {
-        console.error('[events/register] Email sending failed', {
-          debugId,
-          reason: emailDeliveryReason
+          reason: syncResult.reason
         })
       }
-    } catch (emailError: any) {
+    } catch (mailchimpError: any) {
       // Import error or other unexpected error
-      console.error('[events/register] Email service error', {
+      console.error('[events/register] Mailchimp sync error', {
         debugId,
-        message: emailError.message,
-        stack: emailError.stack,
-        error: emailError
+        message: mailchimpError.message,
+        stack: mailchimpError.stack,
+        error: mailchimpError
       })
-      emailDeliveryStatus = 'skipped'
-      emailDeliveryReason = emailError.message || 'email_service_unavailable'
+      mailchimpSyncStatus = 'failed'
+      mailchimpSyncReason = mailchimpError.message || 'mailchimp_service_unavailable'
     }
 
     // Always return success if Supabase insert succeeded
-    // Email delivery status is included for debugging
+    // Mailchimp sync status is included for debugging
     return NextResponse.json({ 
       ok: true, 
       id: registration.id,
-      email_delivery: emailDeliveryStatus,
-      ...(emailDeliveryReason && { email_delivery_reason: emailDeliveryReason })
+      mailchimp_sync: mailchimpSyncStatus,
+      ...(mailchimpSyncReason && { mailchimp_sync_reason: mailchimpSyncReason })
     })
   } catch (error: any) {
     // Catch-all for unexpected errors

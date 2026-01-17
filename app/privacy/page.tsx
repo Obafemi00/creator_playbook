@@ -120,7 +120,7 @@ export default function PrivacyPage() {
             <ul className="list-disc pl-6 space-y-2 mt-4">
               <li><strong>Supabase:</strong> Database and authentication services</li>
               <li><strong>Stripe:</strong> Payment processing</li>
-              <li><strong>Resend:</strong> Email delivery services</li>
+              <li><strong>Mailchimp:</strong> Email marketing and newsletter services</li>
             </ul>
             <p className="mt-4">
               These services have their own privacy policies. We encourage you to review them.
